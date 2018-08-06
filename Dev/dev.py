@@ -54,6 +54,10 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
     bad_data=0
     column=[]
 
+    if file_name=="Hello There!":
+        messagebox.showinfo("","General Kenobi, you're a bold one.")
+
+
     for i in range(0, len(column_format)):
         column.append({"pos":i, "name":column_format_name[i], "val":column_format[i]})
 
@@ -62,7 +66,6 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
         file_lines=file.readlines()
         file.close()
     except FileNotFoundError:
-        messagebox.showerror("Error", "File not found (404)")
         return False, False
 
     flag_1=False
@@ -299,7 +302,13 @@ class Window():
         self.L_anayse=tk.Label(self.w, text = "")
         self.L_anayse.grid(row=4,column=3)
 
+        self.tweak_frame = tk.LabelFrame(self.w, text="Tweaks")
+
     def init_analyse_option(self):
+
+        for child in self.tweak_frame.winfo_children():
+            child.destroy()
+
         output_frame = tk.LabelFrame(self.w, text="Output Log File")
         self.CB_output = tk.Checkbutton(output_frame, variable=self.output_toggle, text="Output file")
         self.CB_output.grid(row=1,column=3)
@@ -310,13 +319,14 @@ class Window():
         output_frame.grid(row=1,rowspan=2, column=3, stick=tk.W)
 
         tk.Label(self.w, text="Analyse type:").grid(row=3,column=0)
+        self.analyse_type.set(ANALYSE_TYPE[0])
         self.O_analyse=tk.OptionMenu(self.w, self.analyse_type, *ANALYSE_TYPE, command=self.change_analyse)
         self.O_analyse.grid(row=3,column=1)
+
 
         self.B_open = tk.Button(self.w, text="Analyse", command=self.analyse)
         self.B_open.grid(row=3,column=2)
 
-        self.tweak_frame = tk.LabelFrame(self.w, text="Tweaks")
         self.tweak_frame.grid(row=4,column=0, rowspan=2, columnspan=3, sticky=tk.N)
 
         self.change_analyse("Difference Time")
@@ -337,6 +347,7 @@ class Window():
             self.L_file.config(text = "File '{}' loaded".format(self.file_name))
             messagebox.showinfo("Done", "File loaded: \n"+GV.read_log)
         else:
+            messagebox.showerror("Error", "File not found (404)")
             self.L_file.config(text = old_text)
 
 
@@ -414,15 +425,39 @@ class Window():
                     res_text+="{}\t{}\n".format(i["year"], i["total"])
 
         if analyse=="Temp Median":
-            res=temp_median(GV.datas, int(self.Sb_tweak1.get()), self.period.get())
-            for elem in res[list(res.keys())[0]]:
-                res_text+="\t"+elem
-            res_text+="\n"
-            for year in res:
-                res_text+=str(year)
-                for data in res[year]:
-                    res_text+="\t"+str(res[year][data])
+            if self.auto_step.get():
+                min=int(self.Sb_tweak31.get())
+                max=int(self.Sb_tweak32.get())
+                res_text+="Delta_T\t"
+                res={}
+                for i in range(min, max+1):
+                    res_text+=str(i)+"\t"*3
                 res_text+="\n"
+                for i in range(min, max+1):
+                    res[i]=temp_median(GV.datas, i, self.period.get())
+                    for elem in res[i][list(res[i].keys())[0]]:
+                        res_text+="\t"+elem
+                res_text+="\n"
+                for year in res[list(res.keys())[0]]:
+                    res_text+=str(year)
+                    for i in res:
+                        for j in res[i]:
+                            if j==year:
+                                for k in res[i][j]:
+                                    res_text+="\t"+str(res[i][j][k])
+                    res_text+="\n"
+
+            else:
+                res=temp_median(GV.datas, int(self.Sb_tweak31.get()), self.period.get())
+                for elem in res[list(res.keys())[0]]:
+                    res_text+="\t"+elem
+                res_text+="\n"
+                for year in res:
+                    res_text+=str(year)
+                    for data in res[year]:
+                        res_text+="\t"+str(res[year][data])
+                    res_text+="\n"
+
 
         if self.output_toggle.get():
             file_write(self.E_output.get(),res_text, GV.read_log)
@@ -430,7 +465,7 @@ class Window():
         #messagebox.showinfo("Done", "Data analysed"+extra_text)
 
         self.L_anayse.config(text="")
-        if len(res_text)>3000:
+        if len(res_text)>2000:
             res_text="Data too big, see file\n"
         self.res_text.config(text=res_text)
         self.res_text.grid()
@@ -444,7 +479,6 @@ class Window():
         self.auto_step.set(0)
         row=1
         if value=="Difference Time":
-            self.auto_step.set(0)
             self.period=tk.IntVar()
             self.period.set(1)
 
@@ -474,8 +508,6 @@ class Window():
 
 
         elif value=="Rain Cumuls":
-            self.auto_step.set(0)
-
             tk.Label(self.tweak_frame, text="Step:").grid(row=row,column=1)
             self.Sb_tweak1=tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3)
             self.Sb_tweak1.delete(0,tk.END)
@@ -497,15 +529,16 @@ class Window():
 
         elif value=="Temp Median":
             self.period.set(0)
-            tk.Label(self.tweak_frame, text="Delta temp").grid(row=row, column=1)
-            self.Sb_tweak1=tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3)
-            self.Sb_tweak1.delete(0,tk.END)
-            self.Sb_tweak1.insert(0,5)
-            self.Sb_tweak1.grid(row=row,column=2)
+            Cb_range_step=tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.cb_toggle_auto_min3)
+            Cb_range_step.grid(row=row, column=1)
+            row+=1
+            tk.Label(self.tweak_frame, text="Delta temp: ").grid(row=row, column=1)
+            self.toggle_auto_min3(True)
+            tk.Label(self.tweak_frame, text="°C").grid(row=row,column=6)
             row+=1
             tk.Label(self.tweak_frame, text="Type:").grid(row=row, column=1)
-            tk.Radiobutton(self.tweak_frame, var=self.period, text="Day to day", value=0).grid(row=row, column=2, sticky=tk.W)
-            tk.Radiobutton(self.tweak_frame, var=self.period, text="Per event", value=1).grid(row=row+1, column=2, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="Day to day", value=0).grid(row=row, column=2, sticky=tk.W, columnspan=10)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="Per event", value=1).grid(row=row+1, column=2, sticky=tk.W, columnspan=10)
 
 
     def load_begin(self):
@@ -618,6 +651,39 @@ class Window():
             self.Sb_tweak2.grid(row=row,column=2)
             self.Sb_L2_tweak2=tk.Label(self.tweak_frame, text="mm/time")
             self.Sb_L2_tweak2.grid(row=row,column=3)
+
+    def cb_toggle_auto_min3(self):
+        self.toggle_auto_min3(False)
+
+    def toggle_auto_min3(self, first):
+        row=2
+        if self.auto_step.get():
+            self.Sb_tweak31.destroy()
+
+            self.Sb_L1_tweak3=tk.Label(self.tweak_frame, text="From:")
+            self.Sb_L1_tweak3.grid(row=row,column=2)
+            self.Sb_tweak31=tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3)
+            self.Sb_tweak31.delete(0,tk.END)
+            self.Sb_tweak31.insert(0,5)
+            self.Sb_tweak31.grid(row=row,column=3)
+            self.Sb_L2_tweak1=tk.Label(self.tweak_frame, text="To:")
+            self.Sb_L2_tweak1.grid(row=row,column=4)
+            self.Sb_tweak32=tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3)
+            self.Sb_tweak32.delete(0,tk.END)
+            self.Sb_tweak32.insert(0,10)
+            self.Sb_tweak32.grid(row=row,column=5)
+
+        else:
+            if not first:
+                self.Sb_L1_tweak3.destroy()
+                self.Sb_tweak31.destroy()
+                self.Sb_L2_tweak1.destroy()
+                self.Sb_tweak32.destroy()
+
+            self.Sb_tweak31=tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3)
+            self.Sb_tweak31.delete(0,tk.END)
+            self.Sb_tweak31.insert(0,8)
+            self.Sb_tweak31.grid(row=row,column=2)
 
 
 
