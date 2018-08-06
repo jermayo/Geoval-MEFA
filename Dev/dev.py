@@ -205,8 +205,57 @@ def rain_cumuls(datas, step, min_rain, min_time_beetween_event):
     return events
 
 #temp median: 1 median done for each day, 2 median over each same day of year, 3 comparaison each day/median of typical day
-#TO DO:
-def temp_median():
+#analy_type: =0 -> day to day, =1 -> per event
+def temp_median(datas, delta_temp, analy_type):
+    typical_median={}
+    days_median={}
+    events={}
+
+    for day in range(0,367):
+        typical_median[day]={"val":0, "numb_of_val":0}
+    for data in datas:
+        date=data["date"].date()
+        if date not in days_median:
+            days_median[date]={"val":0, "numb_of_val":0}
+        days_median[date]["val"]+=data["temp"]
+        days_median[date]["numb_of_val"]+=1
+
+        day_numb=(data["date"]-datetime.datetime(data["date"].year, 1, 1)).days+1
+        typical_median[day_numb]["val"]+=data["temp"]
+        typical_median[day_numb]["numb_of_val"]+=1
+
+        if data["date"].year not in events:
+            events[data["date"].year]={"pos":0, "neg":0, "tot":0}
+
+    for day in typical_median:
+        if typical_median[day]["numb_of_val"]>0:
+            typical_median[day]=typical_median[day]["val"]/typical_median[day]["numb_of_val"]
+        else:
+            typical_median[day]=0
+    for day in days_median:
+        if days_median[day]["numb_of_val"]>0:
+            days_median[day]=days_median[day]["val"]/days_median[day]["numb_of_val"]
+        else:
+            days_median[day]=0
+
+    during_event=False
+    for day in days_median:
+        day_numb=(day-(datetime.datetime(day.year, 1, 1)).date()).days+1
+        diff=typical_median[day_numb]-days_median[day]
+        if abs(diff)>delta_temp and not during_event:
+            if diff>0:
+                events[day.year]["pos"]+=1
+            else:
+                events[day.year]["neg"]+=1
+            events[day.year]["tot"]+=1
+
+            if analy_type:
+                during_event=True
+
+        elif during_event and abs(diff)<delta_temp:
+            during_event=False
+
+    return events
 
 
 
@@ -298,14 +347,15 @@ class Window():
         self.L_anayse.update_idletasks()
         self.load_begin()
 
+        res_text=""
         extra_text=""
         if analyse=="Difference Time":
             def make_text(data):
                 text="Year\t"
-                for key in data[list(res.keys())[0]]:
+                for key in data[list(data.keys())[0]]:
                     text+=key+"\t"*3
                 text+="\n"
-                text+="\tPos.\tNeg.\tTotal"*len(data[list(res.keys())[0]])
+                text+="\tPos.\tNeg.\tTotal"*len(data[list(data.keys())[0]])
                 text+="\n"
                 for year in data:
                     text+=str(year)
@@ -362,6 +412,17 @@ class Window():
                 res_text="Year\tTotal\n"
                 for i in res:
                     res_text+="{}\t{}\n".format(i["year"], i["total"])
+
+        if analyse=="Temp Median":
+            res=temp_median(GV.datas, int(self.Sb_tweak1.get()), self.period.get())
+            for elem in res[list(res.keys())[0]]:
+                res_text+="\t"+elem
+            res_text+="\n"
+            for year in res:
+                res_text+=str(year)
+                for data in res[year]:
+                    res_text+="\t"+str(res[year][data])
+                res_text+="\n"
 
         if self.output_toggle.get():
             file_write(self.E_output.get(),res_text, GV.read_log)
@@ -434,6 +495,17 @@ class Window():
             self.Sb_tweak3.grid(row=row,column=2)
             tk.Label(self.tweak_frame, text="Min").grid(row=row,column=3)
 
+        elif value=="Temp Median":
+            self.period.set(0)
+            tk.Label(self.tweak_frame, text="Delta temp").grid(row=row, column=1)
+            self.Sb_tweak1=tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3)
+            self.Sb_tweak1.delete(0,tk.END)
+            self.Sb_tweak1.insert(0,5)
+            self.Sb_tweak1.grid(row=row,column=2)
+            row+=1
+            tk.Label(self.tweak_frame, text="Type:").grid(row=row, column=1)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="Day to day", value=0).grid(row=row, column=2, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="Per event", value=1).grid(row=row+1, column=2, sticky=tk.W)
 
 
     def load_begin(self):
@@ -565,7 +637,7 @@ RAIN_LIMIT=100
 TEMP_LIMIT=100
 
 
-ANALYSE_TYPE = ("Difference Time", "Rain Cumuls")
+ANALYSE_TYPE = ("Difference Time", "Rain Cumuls", "Temp Median")
 
 #file_name="../Donnee/month6.txt"
 FILE_ENCODING="ISO 8859-1"        #Encoding not same on linux and windows (fgs wondows)
