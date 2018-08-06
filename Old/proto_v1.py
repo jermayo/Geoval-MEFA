@@ -222,7 +222,7 @@ temp_col, rain_col= False, False
 DELTA_TEMP_MIN_EVENT=10
 
 
-file_name="../Donnee/t1986_2018.txt"
+file_name="test_file/month6.txt"
 #file_name="../Donnee/month6.txt"
 file_encoding="ISO 8859-1"        #Encoding not same on linux and windows (fgs wondows)
 

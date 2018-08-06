@@ -204,8 +204,9 @@ def rain_cumuls(datas, step, min_rain, min_time_beetween_event):
             break
     return events
 
-
-
+#temp median: 1 median done for each day, 2 median over each same day of year, 3 comparaison each day/median of typical day
+#TO DO:
+def temp_median():
 
 
 
@@ -230,7 +231,7 @@ class Window():
 
         tk.Label(self.w, text="File Name:").grid(row=1,column=0)
         self.E_file = tk.Entry(self.w)
-        self.E_file.insert(0,"test_file/month6.txt")
+        self.E_file.insert(0,"../test_file/month6.txt")
         self.E_file.grid(row=1,column=1)
         self.B_open = tk.Button(self.w, text="Open", command=self.open_file)
         self.B_open.grid(row=1,column=2)
