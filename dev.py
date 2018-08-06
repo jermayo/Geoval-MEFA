@@ -230,7 +230,7 @@ class Window():
 
         tk.Label(self.w, text="File Name:").grid(row=1,column=0)
         self.E_file = tk.Entry(self.w)
-        self.E_file.insert(0,"../Donnee/month6.txt")
+        self.E_file.insert(0,"test_file/month6.txt")
         self.E_file.grid(row=1,column=1)
         self.B_open = tk.Button(self.w, text="Open", command=self.open_file)
         self.B_open.grid(row=1,column=2)
@@ -299,6 +299,21 @@ class Window():
 
         extra_text=""
         if analyse=="Difference Time":
+            def make_text(data):
+                text="Year\t"
+                for key in data[list(res.keys())[0]]:
+                    text+=key+"\t"*3
+                text+="\n"
+                text+="\tPos.\tNeg.\tTotal"*len(data[list(res.keys())[0]])
+                text+="\n"
+                for year in data:
+                    text+=str(year)
+                    for p in data[year]:
+                        value=data[year][p]
+                        text+="\t{}\t{}\t{}".format(value["pos"], value["neg"], value["total"])
+                    text+="\n"
+                return text
+
             delta_t=datetime.timedelta(hours=int(self.Sb_tweak2.get()))
             time_max_event=datetime.timedelta(hours=int(self.Sb_tweak3.get()))
             period=self.period.get()
@@ -311,30 +326,17 @@ class Window():
                 period_list={}
                 for i in range(1,13):
                     period_list[month_abbr[i]]=[i, i+1]
-            res=diff_time(GV.datas, delta_t, int(self.Sb_tweak1.get()), time_max_event, period_list)
-            # for key in res:
-            #     for key2 in res[key]:
-            #         print(key2,res[key][key2])
-            res_text="Year\t"
-            for key in res[list(res.keys())[0]]:
-                res_text+=key+"\t"*3
-            res_text+="\n"
-            #for data_type in list(res[list(res.keys())[0]])[0]:
-            res_text+="\tPos.\tNeg.\tTotal"*len(res[list(res.keys())[0]])
-            res_text+="\n"
-            for year in res:
-                res_text+=str(year)
-                for p in res[year]:
-                    data=res[year][p]
-                    res_text+="\t{}\t{}\t{}".format(data["pos"], data["neg"], data["total"])
-                res_text+="\n"
-            # for i in res_total[0]:
-            #     res_text+=str(i["year"])
-            #     for j in res_total:
-            #         for k in j:
-            #             if k["year"]==i["year"]:
-            #                 res_text+="\t{}\t{}\t{}".format(k["pos"], k["neg"], k["total"])
-            #     res_text+="\n"
+
+            if self.auto_step.get():
+                min=int(self.Sb_tweak11.get())
+                max=int(self.Sb_tweak12.get())
+                res_text=""
+                for i in range(min, max+1):
+                    res=diff_time(GV.datas, delta_t, i, time_max_event, period_list)
+                    res_text+="Delta T: "+str(i)+"\n"+make_text(res)+"\n\n"
+            else:
+                res=diff_time(GV.datas, delta_t, int(self.Sb_tweak1.get()), time_max_event, period_list)
+                res_text=make_text(res)
 
 
         if analyse=="Rain Cumuls":
@@ -344,8 +346,8 @@ class Window():
                 res_total=[]
                 res_text="\t"
                 min=int(self.Sb_tweak21.get())
-                max=int(self.Sb_tweak22.get())+1
-                for i in range(min, max):
+                max=int(self.Sb_tweak22.get())
+                for i in range(min, max+1):
                     res=rain_cumuls(GV.datas, step, i, min_time_beetween_event)
                     res_total.append({"min":i, "res":res})
                 for i in res_total[0]["res"]:
@@ -366,7 +368,8 @@ class Window():
         #messagebox.showinfo("Done", "Data analysed"+extra_text)
 
         self.L_anayse.config(text="")
-
+        if len(res_text)>3000:
+            res_text="Data too big, see file\n"
         self.res_text.config(text=res_text)
         self.res_text.grid()
         self.result_frame.grid()
