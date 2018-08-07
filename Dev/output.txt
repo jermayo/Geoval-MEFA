@@ -1,0 +1,5 @@
+					2018-08-07
+Result of analyse of data: 26208 values with 0 bad values (0.0%) (taken out)
+Year	All Year			
+	Pos.	Neg.	Total
+2016	4	7	11

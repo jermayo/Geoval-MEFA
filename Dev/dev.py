@@ -157,7 +157,6 @@ def diff_time(datas, delta_t, delta_temp, time_max_event, periods):
                 if date_beetween(datas[i]["date"], periods[key][0], periods[key][1]):
                     new_event={"start": datas[i]["date"], "type": event_type, "period":key}
                     break
-            #print(new_event["start"])
 
         elif during_event:
             if datas[i]["date"]-new_event["start"]>time_max_event:
@@ -182,7 +181,7 @@ def diff_time(datas, delta_t, delta_temp, time_max_event, periods):
     return event_list
 
 #Rain
-def rain_cumuls(datas, step, min_rain, min_time_beetween_event):
+def rain_cumul(datas, step, min_rain, min_time_beetween_event):
     last_event_date=datetime.datetime.min
     events=[]
     for i in range(0,len(datas)):
@@ -207,44 +206,44 @@ def rain_cumuls(datas, step, min_rain, min_time_beetween_event):
             break
     return events
 
-#temp median: 1 median done for each day, 2 median over each same day of year, 3 comparaison each day/median of typical day
+#temp average: 1 average done for each day, 2 average over each same day of year, 3 comparaison each day/average of typical day
 #analy_type: =0 -> day to day, =1 -> per event
-def temp_median(datas, delta_temp, analy_type):
-    typical_median={}
-    days_median={}
+def temp_average(datas, delta_temp, analy_type):
+    typical_average={}
+    days_average={}
     events={}
 
     for day in range(0,367):
-        typical_median[day]={"val":0, "numb_of_val":0}
+        typical_average[day]={"val":0, "numb_of_val":0}
     for data in datas:
         date=data["date"].date()
-        if date not in days_median:
-            days_median[date]={"val":0, "numb_of_val":0}
-        days_median[date]["val"]+=data["temp"]
-        days_median[date]["numb_of_val"]+=1
+        if date not in days_average:
+            days_average[date]={"val":0, "numb_of_val":0}
+        days_average[date]["val"]+=data["temp"]
+        days_average[date]["numb_of_val"]+=1
 
         day_numb=(data["date"]-datetime.datetime(data["date"].year, 1, 1)).days+1
-        typical_median[day_numb]["val"]+=data["temp"]
-        typical_median[day_numb]["numb_of_val"]+=1
+        typical_average[day_numb]["val"]+=data["temp"]
+        typical_average[day_numb]["numb_of_val"]+=1
 
         if data["date"].year not in events:
             events[data["date"].year]={"pos":0, "neg":0, "tot":0}
 
-    for day in typical_median:
-        if typical_median[day]["numb_of_val"]>0:
-            typical_median[day]=typical_median[day]["val"]/typical_median[day]["numb_of_val"]
+    for day in typical_average:
+        if typical_average[day]["numb_of_val"]>0:
+            typical_average[day]=typical_average[day]["val"]/typical_average[day]["numb_of_val"]
         else:
-            typical_median[day]=0
-    for day in days_median:
-        if days_median[day]["numb_of_val"]>0:
-            days_median[day]=days_median[day]["val"]/days_median[day]["numb_of_val"]
+            typical_average[day]=0
+    for day in days_average:
+        if days_average[day]["numb_of_val"]>0:
+            days_average[day]=days_average[day]["val"]/days_average[day]["numb_of_val"]
         else:
-            days_median[day]=0
+            days_average[day]=0
 
     during_event=False
-    for day in days_median:
+    for day in days_average:
         day_numb=(day-(datetime.datetime(day.year, 1, 1)).date()).days+1
-        diff=typical_median[day_numb]-days_median[day]
+        diff=typical_average[day_numb]-days_average[day]
         if abs(diff)>delta_temp and not during_event:
             if diff>0:
                 events[day.year]["pos"]+=1
@@ -271,7 +270,7 @@ class Window():
     def __init__(self):
         #Main window
         self.w=tk.Tk()
-        self.w.title("Environemental Analyse Tool")
+        self.w.title("Meteorological Event Frequency Analysis")
         #StringVar
         self.analyse_type = tk.StringVar(self.w)
         self.analyse_type.set(ANALYSE_TYPE[0])
@@ -283,7 +282,7 @@ class Window():
 
         tk.Label(self.w, text="File Name:").grid(row=1,column=0)
         self.E_file = tk.Entry(self.w)
-        self.E_file.insert(0,"../test_file/month6.txt")
+        self.E_file.insert(0, DEFAULT_FILE_NAME)
         self.E_file.grid(row=1,column=1)
         self.B_open = tk.Button(self.w, text="Open", command=self.open_file)
         self.B_open.grid(row=1,column=2)
@@ -303,9 +302,9 @@ class Window():
         self.L_anayse.grid(row=4,column=3)
 
         self.tweak_frame = tk.LabelFrame(self.w, text="Tweaks")
+        self.L_info=tk.Label(self.w, justify=tk.LEFT, relief=tk.RIDGE, padx=5, pady=5, font=("Helvetica", 11))
 
     def init_analyse_option(self):
-
         for child in self.tweak_frame.winfo_children():
             child.destroy()
 
@@ -328,6 +327,7 @@ class Window():
         self.B_open.grid(row=3,column=2)
 
         self.tweak_frame.grid(row=4,column=0, rowspan=2, columnspan=3, sticky=tk.N)
+        self.L_info.grid(row=7,column=0, rowspan=2, columnspan=4, sticky=tk.N)
 
         self.change_analyse("Difference Time")
 
@@ -401,7 +401,7 @@ class Window():
                 res_text=make_text(res)
 
 
-        if analyse=="Rain Cumuls":
+        if analyse=="Rain Cumul":
             step=datetime.timedelta(hours=int(self.Sb_tweak1.get()))
             min_time_beetween_event=datetime.timedelta(minutes=int(self.Sb_tweak3.get()))
             if self.auto_step.get():
@@ -410,7 +410,7 @@ class Window():
                 min=int(self.Sb_tweak21.get())
                 max=int(self.Sb_tweak22.get())
                 for i in range(min, max+1):
-                    res=rain_cumuls(GV.datas, step, i, min_time_beetween_event)
+                    res=rain_cumul(GV.datas, step, i, min_time_beetween_event)
                     res_total.append({"min":i, "res":res})
                 for i in res_total[0]["res"]:
                     res_text+=str(i["year"])+"\t"
@@ -419,12 +419,12 @@ class Window():
                     for i in res["res"]:
                         res_text+="\t"+str(i["total"])
             else:
-                res=rain_cumuls(GV.datas, step, float(self.Sb_tweak2.get()), min_time_beetween_event)
+                res=rain_cumul(GV.datas, step, float(self.Sb_tweak2.get()), min_time_beetween_event)
                 res_text="Year\tTotal\n"
                 for i in res:
                     res_text+="{}\t{}\n".format(i["year"], i["total"])
 
-        if analyse=="Temp Median":
+        if analyse=="Temp Average":
             if self.auto_step.get():
                 min=int(self.Sb_tweak31.get())
                 max=int(self.Sb_tweak32.get())
@@ -434,7 +434,7 @@ class Window():
                     res_text+=str(i)+"\t"*3
                 res_text+="\n"
                 for i in range(min, max+1):
-                    res[i]=temp_median(GV.datas, i, self.period.get())
+                    res[i]=temp_average(GV.datas, i, self.period.get())
                     for elem in res[i][list(res[i].keys())[0]]:
                         res_text+="\t"+elem
                 res_text+="\n"
@@ -448,7 +448,7 @@ class Window():
                     res_text+="\n"
 
             else:
-                res=temp_median(GV.datas, int(self.Sb_tweak31.get()), self.period.get())
+                res=temp_average(GV.datas, int(self.Sb_tweak31.get()), self.period.get())
                 for elem in res[list(res.keys())[0]]:
                     res_text+="\t"+elem
                 res_text+="\n"
@@ -506,8 +506,10 @@ class Window():
 
             tk.Label(self.tweak_frame, text="(Season: Winter (Dec, Jan, Feb), and so on...)").grid(row=5, column=1, columnspan=3)
 
+            self.L_info.config(text=DIFF_TIME_INFO+END_INFO)
 
-        elif value=="Rain Cumuls":
+
+        elif value=="Rain Cumul":
             tk.Label(self.tweak_frame, text="Step:").grid(row=row,column=1)
             self.Sb_tweak1=tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3)
             self.Sb_tweak1.delete(0,tk.END)
@@ -527,18 +529,22 @@ class Window():
             self.Sb_tweak3.grid(row=row,column=2)
             tk.Label(self.tweak_frame, text="Min").grid(row=row,column=3)
 
-        elif value=="Temp Median":
+            self.L_info.config(text=RAIN_CUMUL_INFO+END_INFO)
+
+        elif value=="Temp Average":
             self.period.set(0)
             Cb_range_step=tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.cb_toggle_auto_min3)
             Cb_range_step.grid(row=row, column=1)
             row+=1
-            tk.Label(self.tweak_frame, text="Delta temp: ").grid(row=row, column=1)
+            tk.Label(self.tweak_frame, text="Delta Temp: ").grid(row=row, column=1)
             self.toggle_auto_min3(True)
             tk.Label(self.tweak_frame, text="°C").grid(row=row,column=6)
             row+=1
             tk.Label(self.tweak_frame, text="Type:").grid(row=row, column=1)
             tk.Radiobutton(self.tweak_frame, var=self.period, text="Day to day", value=0).grid(row=row, column=2, sticky=tk.W, columnspan=10)
             tk.Radiobutton(self.tweak_frame, var=self.period, text="Per event", value=1).grid(row=row+1, column=2, sticky=tk.W, columnspan=10)
+
+            self.L_info.config(text=TEMP_AVERAGE_INFO+END_INFO)
 
 
     def load_begin(self):
@@ -552,8 +558,7 @@ class Window():
         self.load_w=tk.Tk()
         self.load_w.title("Loading")
         self.load_w.geometry('%dx%d+%d+%d' % (load_w_width, load_w_height, x, y))
-        tk.Label(self.load_w, text="Loading, please wait...\n(This can take a few minutes)").pack()#.grid(row=1,column=1)
-        tk.Button(self.load_w, text="Cancel", state="disable").pack()#.grid(row=2, column=1)
+        tk.Label(self.load_w, text="Loading, please wait...\n(This can take a few minutes)").pack()
 
         self.w.update()
         self.load_w.update()
@@ -573,7 +578,7 @@ class Window():
             self.Sb_tweak1.destroy()
             self.Sb_L2_tweak1.destroy()
 
-            self.Sb_L1_tweak1=tk.Label(self.tweak_frame, text="Min Event delta Temp:")
+            self.Sb_L1_tweak1=tk.Label(self.tweak_frame, text="Delta Temp:")
             self.Sb_L1_tweak1.grid(row=row,column=1)
             self.Sb_L2_tweak1=tk.Label(self.tweak_frame, text="From:")
             self.Sb_L2_tweak1.grid(row=row,column=2)
@@ -597,7 +602,7 @@ class Window():
                 self.Sb_tweak12.destroy()
                 self.Sb_L4_tweak1.destroy()
 
-            self.Sb_L1_tweak1=tk.Label(self.tweak_frame, text="Min Event delta Temp:")
+            self.Sb_L1_tweak1=tk.Label(self.tweak_frame, text="Delta Temp:")
             self.Sb_L1_tweak1.grid(row=row,column=1)
             self.Sb_tweak1=tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3)
             self.Sb_tweak1.delete(0,tk.END)
@@ -618,7 +623,7 @@ class Window():
             self.Sb_tweak2.destroy()
             #self.w.update()
 
-            self.Sb_L1_tweak2=tk.Label(self.tweak_frame, text="Min rain:")
+            self.Sb_L1_tweak2=tk.Label(self.tweak_frame, text="Min Rain:")
             self.Sb_L1_tweak2.grid(row=row,column=1)
             self.Sb_L2_tweak2=tk.Label(self.tweak_frame, text="From:")
             self.Sb_L2_tweak2.grid(row=row,column=2)
@@ -643,7 +648,7 @@ class Window():
                 self.Sb_tweak21.destroy()
                 self.Sb_tweak22.destroy()
 
-            self.Sb_L1_tweak2=tk.Label(self.tweak_frame, text="Min rain:")
+            self.Sb_L1_tweak2=tk.Label(self.tweak_frame, text="Min Rain:")
             self.Sb_L1_tweak2.grid(row=row,column=1)
             self.Sb_tweak2=tk.Spinbox(self.tweak_frame, from_=0, to_=1000000, justify=tk.RIGHT, width=3)
             self.Sb_tweak2.delete(0,tk.END)
@@ -703,15 +708,37 @@ RAIN_LIMIT=100
 TEMP_LIMIT=100
 
 
-ANALYSE_TYPE = ("Difference Time", "Rain Cumuls", "Temp Median")
+ANALYSE_TYPE = ("Difference Time", "Rain Cumul", "Temp Average")
 
-#file_name="../Donnee/month6.txt"
+DEFAULT_FILE_NAME="../test_file/month6.txt"
+#DEFAULT_FILE_NAME=".txt"
+
 FILE_ENCODING="ISO 8859-1"        #Encoding not same on linux and windows (fgs wondows)
 
 
 
 column_format_name=["STA", "JAHR", "MO", "TG", "HH", "MM"]
 column_format=["Station", "Year", "Month", "Day", "Hour", "Minutes"]
+
+DIFF_TIME_INFO="""  Description:
+Difference over time:
+Event starts if the difference beetween a value and the value recorded "Time Diff" before is greater than "Delta Temp".
+It ends after "Max event time" so every value greater than "Delta Temp" in that period is not taken into account.
+The period allows one to look at the number of event per period of each year."""
+RAIN_CUMUL_INFO=""" Description:
+Rain cumul:
+Events starts when the rain cumul in the last "step" hours is greater than "Min Rain".
+The value of "Min Rain" is in mm/"step" (so mm/6h per default)
+Events stops when the time beetween the next time the cumul is greater than "Min Rain"
+and the last time it did is greater than "Min time beet. events"."""
+TEMP_AVERAGE_INFO="""   Description:
+Temperature average:
+Event happens if the difference beetween the daily average and the typical average is greater than "Delta Temp".
+The typical average is calulated for each day of the year as the average of the daily average of one of the day of the year.
+(For exemple: take the daily average of each July 20th every year and make the average of them all, that is the typical daily average)
+"Per event" implies that if two consecutive days are events, they only count as one,
+whereas "day to day" counts every day that is an event."""
+END_INFO="""\n\nAuto Range: automaticaly makes the analyses for all values beetween set boundaries"""
 
 #######################################################################################
 #                            Main programme                                           #
@@ -720,6 +747,3 @@ GV=GlobalVariables()
 
 main=Window()
 main.w.mainloop()
-
-
-#TO DO: Finish ranged min temperature (GUI ok, calcule not)
