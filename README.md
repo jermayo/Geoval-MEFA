@@ -10,6 +10,8 @@ Le but est d'observer l'éventuel augmentation du nombre d'évènements par ann�
 Utilisation:
 1.  Du code source: Téléchargez la dernière version fixe (Old/fixed_vxx/, voir version)
     et éxecutez avec python 3.x (codé en 3.6)
+    Possibilté de compiler (requière "pyinstaller") UNIQUEMNT POUR LINUX avec la commande
+    "./compile" (depuis le dossier Dev/) -> créé un fichier mefa_vxx.x
 2.  Fichier exe: Téléchargez la dernière version mefa_vxx.x (Unix) ou mefa_vxx.exe (Windows)
 
 
