@@ -14,10 +14,10 @@ Dossier:
 1.  Dev:        Code en cours de développement
 2.  Old:        Vieilles versions sans (trop de) bug, contient la dernière version stable
 3.  test_file:  Fichier test pour le développement
-4.  Results:    Certain résultats sous forme de tableau excel 
+4.  Results:    Certain résultats sous forme de tableau excel
 
 Version:
-Dev: 1.6, Fixed: 1.5 (utilisez celui-ci), Exe: 1.5 (Linux uniquement)
+Dev: 1.6, Fixed: 1.5 (utilisez celui-ci), Exe: mefa_v15.x ver. 1.5 (Linux uniquement)
 
 Jérémy Mayoraz pour Géoval, 7 août 2018
 Pour toutes questions: jeremy.mayoraz@gmail.com
