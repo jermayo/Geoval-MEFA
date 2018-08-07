@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 import tkinter as tk
 from tkinter import messagebox
 import datetime
@@ -302,7 +305,7 @@ class Window():
         self.L_anayse.grid(row=4,column=3)
 
         self.tweak_frame = tk.LabelFrame(self.w, text="Tweaks")
-        self.L_info=tk.Label(self.w, justify=tk.LEFT, relief=tk.RIDGE, padx=5, pady=5, font=("Helvetica", 11))
+        self.L_info=tk.Label(self.w, justify=tk.LEFT, relief=tk.RIDGE, padx=5, pady=5)
 
     def init_analyse_option(self):
         for child in self.tweak_frame.winfo_children():
