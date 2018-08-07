@@ -1,0 +1,10 @@
+#!/bin/bash
+echo "Compiling..."
+echo ""
+pyinstaller -F main.py
+echo ""
+echo "Cleaning..."
+echo ""
+mv dist/main mefa_v16.x
+rm -r build/ __pycache__/ main.spec dist/
+echo "Done!"

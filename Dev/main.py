@@ -504,8 +504,8 @@ TEMP_LIMIT=100
 
 ANALYSE_TYPE = ("Difference Time", "Rain Cumul", "Temp Average")
 
-DEFAULT_FILE_NAME="../test_file/month6.txt"
-#DEFAULT_FILE_NAME=".txt"
+#DEFAULT_FILE_NAME="../test_file/month6.txt"
+DEFAULT_FILE_NAME=".txt"
 
 FILE_ENCODING="ISO 8859-1"        #Encoding not same on linux and windows (fgs wondows)
 
