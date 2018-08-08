@@ -1,6 +1,6 @@
-# Geoval
+# Geoval-MEFA
 Analyse de donnee environemental pour Geoval
-
+Meteorological Events Frequency Analysis
 
 Description:
 Programme pour l'analyse de l'évolution de la température et des précipitions.
