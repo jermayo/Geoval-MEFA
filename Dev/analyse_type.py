@@ -107,8 +107,8 @@ def diff_time(datas, delta_t, time_max_event, period, T_min, T_max, max_limit):
         text+=str(i)+"\t"*(len(period_list)*3+1)
     for period in period_list:
         period_text+=str(period)+"\t"*3
-    text+="\n\t"+(period_text+"\t")*(T_max-T_min)
-    text+="\n\t"+("pos\tneg\ttot\t"*len(period_list)+"\t")*(T_max-T_min)
+    text+="\n\t"+(period_text+"\t")*(T_max-T_min+1)
+    text+="\n\t"+("pos\tneg\ttot\t"*len(period_list)+"\t")*(T_max-T_min+1)
     for year in res:
         text+="\n"+str(year)
         for max in res[year]:

@@ -147,12 +147,12 @@ class Window():
         self.B_open.grid(row=1,column=2)
 
         self.B_exit = tk.Button(self.w, text="Exit", command=self.w.destroy)
-        self.B_exit.grid(row=5, column=3, sticky=tk.S)
+        self.B_exit.grid(row=5, column=3, sticky=tk.SW)
 
         self.L_file=tk.Label(self.w, text=self.file_name)
 
         self.result_frame=tk.LabelFrame(self.w, text="Results")
-        self.res_text=tk.Label(self.result_frame, justify=tk.LEFT, wraplength=1000)
+        self.res_text=tk.Label(self.result_frame, justify=tk.LEFT)
         self.res_text.grid()
         self.result_frame.grid(row=4,column=3)
         self.result_frame.grid_remove()
@@ -186,7 +186,7 @@ class Window():
         self.B_open.grid(row=3,column=2)
 
         self.tweak_frame.grid(row=4,column=0, rowspan=2, columnspan=3, sticky=tk.N)
-        self.L_info.grid(row=7,column=0, rowspan=2, columnspan=4, sticky=tk.N)
+        self.L_info.grid(row=7,column=0, rowspan=2, columnspan=4, sticky=tk.NW)
 
         self.change_analyse("Difference Time")
 
@@ -511,8 +511,8 @@ TEMP_LIMIT=100
 
 ANALYSE_TYPE = ("Difference Time", "Rain Cumul", "Temp Average")
 
-DEFAULT_FILE_NAME="../test_file/month6.txt"
-#DEFAULT_FILE_NAME=".txt"
+#DEFAULT_FILE_NAME="../test_file/month6.txt"
+DEFAULT_FILE_NAME=".txt"
 
 FILE_ENCODING="ISO 8859-1"        #Encoding not same on linux and windows (fgs wondows)
 
@@ -524,8 +524,9 @@ column_format=["Station", "Year", "Month", "Day", "Hour", "Minutes"]
 DIFF_TIME_INFO="""  Description:
 Difference over time:
 Event starts if the difference beetween a value and the value recorded "Time Diff" before is greater than "Delta Temp".
-It ends after "Max event time" so every value greater than "Delta Temp" in that period is not taken into account.
-The period allows one to look at the number of event per period of each year."""
+It ends after "Max event time" so every value greater than "Delta Temp" in that period is not taken into account. The period
+allows one to look at the number of event per period of each year. When 'With max' (only possible for Auto Range) is checked,
+an event is counted ONLY in the temperature corresponding to it's maximal value."""
 RAIN_CUMUL_INFO=""" Description:
 Rain cumul:
 Events starts when the rain cumul in the last "step" hours is greater than "Min Rain".
