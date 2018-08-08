@@ -136,6 +136,8 @@ class Window():
         self.file_name="..."
         self.auto_step=tk.IntVar()
         self.auto_step.set(0)
+        self.max_limit=tk.IntVar()
+        self.max_limit.set(0)
 
         tk.Label(self.w, text="File Name:").grid(row=1,column=0)
         self.E_file = tk.Entry(self.w)
@@ -221,14 +223,15 @@ class Window():
             delta_t=datetime.timedelta(hours=int(self.Sb_tweak2.get()))
             time_max_event=datetime.timedelta(hours=int(self.Sb_tweak3.get()))
             period=self.period.get()
-
+            max_limit=False
             if self.auto_step.get():
                 min=int(self.Sb_tweak11.get())
                 max=int(self.Sb_tweak12.get())
+                max_limit=self.max_limit.get()
             else:
                 min=int(self.Sb_tweak1.get())
                 max=min
-            res_text=at.diff_time(GV.datas, delta_t, time_max_event, period, min, max)
+            res_text=at.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
 
         if analyse=="Rain Cumul":
             step=datetime.timedelta(hours=int(self.Sb_tweak1.get()))
@@ -259,7 +262,7 @@ class Window():
         #messagebox.showinfo("Done", "Data analysed"+extra_text)
 
         self.L_anayse.config(text="")
-        if len(res_text)>2000:
+        if len(res_text)>1000:
             res_text="Data too big, see file\n"
         self.res_text.config(text=res_text)
         self.res_text.grid()
@@ -366,12 +369,15 @@ class Window():
         self.toggle_auto_min(False)
 
     def toggle_auto_min(self, first):
-        row=2
+        row=1
         if self.auto_step.get():
             self.Sb_L1_tweak1.destroy()
             self.Sb_tweak1.destroy()
             self.Sb_L2_tweak1.destroy()
 
+            self.Sb_tweak0=tk.Checkbutton(self.tweak_frame, text="With Max", variable=self.max_limit)
+            self.Sb_tweak0.grid(row=row, column=2, columnspan=4)
+            row+=1
             self.Sb_L1_tweak1=tk.Label(self.tweak_frame, text="Delta Temp:")
             self.Sb_L1_tweak1.grid(row=row,column=1)
             self.Sb_L2_tweak1=tk.Label(self.tweak_frame, text="From:")
@@ -390,12 +396,13 @@ class Window():
             self.Sb_L4_tweak1.grid(row=row,column=6)
         else:
             if not first:
+                self.Sb_tweak0.destroy()
                 self.Sb_L1_tweak1.destroy()
                 self.Sb_tweak11.destroy()
                 self.Sb_L3_tweak1.destroy()
                 self.Sb_tweak12.destroy()
                 self.Sb_L4_tweak1.destroy()
-
+            row+=1
             self.Sb_L1_tweak1=tk.Label(self.tweak_frame, text="Delta Temp:")
             self.Sb_L1_tweak1.grid(row=row,column=1)
             self.Sb_tweak1=tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3)
@@ -504,8 +511,8 @@ TEMP_LIMIT=100
 
 ANALYSE_TYPE = ("Difference Time", "Rain Cumul", "Temp Average")
 
-#DEFAULT_FILE_NAME="../test_file/month6.txt"
-DEFAULT_FILE_NAME=".txt"
+DEFAULT_FILE_NAME="../test_file/month6.txt"
+#DEFAULT_FILE_NAME=".txt"
 
 FILE_ENCODING="ISO 8859-1"        #Encoding not same on linux and windows (fgs wondows)
 

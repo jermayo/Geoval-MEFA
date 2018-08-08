@@ -1,12 +1,12 @@
-14:17:50   09.05.2018              Programm Climap                 MeteoSchweiz							
-Zeitangaben in UTC 0040 (UTC)  =  01:40 Uhr Winterzeit  =  02:40 Uhr Sommerzeit							
-Auswahlperiode: 01.01.2000 00:00  -  31.12.2000 23:50 UTC 32767 -> Keine Angabe							
-Anzahl Stationen  1							
-88	Evolène / Villa         1825 m.ü.M.	605415/ 106740					
-Anzahl Parameter  2							
-    93  Niederschlag	 Zehnminutensumme  [mm]						
-    91  Lufttemperatur 2 m über Boden	 Momentanwert  [°C]						
-							
+14:17:50   09.05.2018              Programm Climap                 MeteoSchweiz
+Zeitangaben in UTC 0040 (UTC)  =  01:40 Uhr Winterzeit  =  02:40 Uhr Sommerzeit
+Auswahlperiode: 01.01.2000 00:00  -  31.12.2000 23:50 UTC 32767 -> Keine Angabe
+Anzahl Stationen  1
+88	Evolï¿½ne / Villa         1825 m.ï¿½.M.	605415/ 106740
+Anzahl Parameter  2
+    93  Niederschlag	 Zehnminutensumme  [mm]
+    91  Lufttemperatur 2 m ï¿½ber Boden	 Momentanwert  [ï¿½C]
+
 STA	JAHR	MO	TG	HH	MM	93	91
 88	2016	1	1	0	0	0	-0.2
 88	2016	1	1	0	10	0	0.2
@@ -26216,4 +26216,3 @@ STA	JAHR	MO	TG	HH	MM	93	91
 88	2016	6	30	23	30	0	10.2
 88	2016	6	30	23	40	0	9.3
 88	2016	6	30	23	50	0	9.5
-

@@ -16,15 +16,18 @@ import tkinter as tk
 
 #print(hello)
 
-# test={"un":1, "deux":2, "trois":3}
-# test2={"un2":1, "deux2":2, "trois2":3}
-# tot={"test":test, "test2":test2}
+test={"un":1, "deux":2, "trois":3}
+test2={"un2":1, "deux2":2, "trois2":3}
+tot={"test":test, "test2":test2}
 #
 # print(list(tot[list(tot.keys())[0]].keys())[0])
+#
+# period_end=datetime.datetime.strptime("01-03-2011","%d-%m-%Y")
+#
+# yday = (period_end - datetime.datetime(period_end.year, 1, 1)).days+1
+#
+# print(datetime.datetime.date(period_end))
+# print(period_end.date())
 
-period_end=datetime.datetime.strptime("01-03-2011","%d-%m-%Y")
 
-yday = (period_end - datetime.datetime(period_end.year, 1, 1)).days+1
-
-print(datetime.datetime.date(period_end))
-print(period_end.date())
+print(text)

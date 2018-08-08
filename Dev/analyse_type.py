@@ -13,10 +13,20 @@ def _date_beetween(date, month_start, month_end):
 #######################################################################################
 ########################## DIFF TIME ##################################################
 #Difference of temp with hours before
-def diff_time(datas, delta_t, time_max_event, period, T_min, T_max):
-    def _diff_time(datas, delta_t, delta_temp, time_max_event, periods):
+def diff_time(datas, delta_t, time_max_event, period, T_min, T_max, max_limit):
+    def _diff_time(datas, delta_t, min, max, time_max_event, periods, max_limit):
+        def add_event(events, new_event, temp):
+            year=new_event["last"].year
+            period=new_event["period"]
+            if new_event["type"]=="+":
+                events[year][temp][period]["pos"]+=1
+            elif new_event["type"]=="-":
+                events[year][temp][period]["neg"]+=1
+            events[year][temp][period]["total"]+=1
+
+            return events
+
         #month_start and month end of type int, month_end NOT included, 13 means decembre included
-        during_event=False
         event_list=OrderedDict()
         year_list=[]
 
@@ -25,8 +35,12 @@ def diff_time(datas, delta_t, time_max_event, period, T_min, T_max):
             if year not in year_list:
                 year_list.append(year)
                 new_period=OrderedDict()
-                for key in periods:
-                    new_period[key]={"pos":0, "neg":0, "total":0}
+                for temp in range(min, max+1):
+                    new_max=OrderedDict()
+                    for key in periods:
+                        new_max[key]={"pos":0, "neg":0, "total":0}
+                    new_max["during_event"]=False
+                    new_period[temp]=new_max
                 event_list[year]=new_period
 
             j=i
@@ -34,60 +48,76 @@ def diff_time(datas, delta_t, time_max_event, period, T_min, T_max):
                 j+=1
 
             d_temp=datas[j]["temp"]-datas[i]["temp"]
-            if not during_event and abs(d_temp)>delta_temp:
-                during_event=True
-                event_type="+"
-                if d_temp<0:
-                    event_type="-"
+            for temp in event_list[year]:
+                case=event_list[year][temp]
+                if not case["during_event"] and abs(d_temp)>=temp:
+                    case["during_event"]=True
+                    event_type="+"
+                    if d_temp<0:
+                        event_type="-"
 
-                for key in periods:
-                    if _date_beetween(datas[i]["date"], periods[key][0], periods[key][1]):
-                        new_event={"start": datas[i]["date"], "type": event_type, "period":key}
-                        break
+                    for key in periods:
+                        if _date_beetween(datas[i]["date"], periods[key][0], periods[key][1]):
+                            new_event={"last": datas[i]["date"], "type": event_type, "period":key, "max":abs(d_temp)}
+                            break
 
-            elif during_event:
-                if datas[i]["date"]-new_event["start"]>time_max_event:
-                    during_event=False
+                elif case["during_event"]:
+                    if abs(d_temp)>new_event["max"]:
+                        new_event["max"]=abs(d_temp)
 
-                    if new_event["type"]=="+":
-                        event_list[new_event["start"].year][new_event["period"]]["pos"]+=1
-                    elif new_event["type"]=="-":
-                        event_list[new_event["start"].year][new_event["period"]]["neg"]+=1
-                    event_list[new_event["start"].year][new_event["period"]]["total"]+=1
+                    if d_temp>=min:
+                        new_event["last"]=datas[i]["date"]
+
+                    elif datas[i]["date"]-new_event["last"]>time_max_event:
+                        case["during_event"]=False
+                        if max_limit and new_event["max"]<temp+1:
+                            event_list=add_event(event_list, new_event, temp)
+                        elif not max_limit:
+                            event_list=add_event(event_list, new_event, temp)
 
             if j>=len(datas)-1:
                 break
 
-        if during_event:
-            if new_event["type"]=="+":
-                event_list[new_event["start"].year][new_event["period"]]["pos"]+=1
-            elif new_event["type"]=="-":
-                event_list[new_event["start"].year][new_event["period"]]["neg"]+=1
-            event_list[new_event["start"].year][new_event["period"]]["total"]+=1
-
+        for temp in event_list[year]:
+            case=event_list[year][temp]
+            if case["during_event"]:
+                if abs(d_temp)>new_event["max"]:
+                    new_event["max"]=abs(d_temp)
+                if max_limit and new_event["max"]<temp+1:
+                    event_list=add_event(event_list, new_event, temp)
+                elif not max_limit:
+                    event_list=add_event(event_list, new_event, temp)
         return event_list
 
-    text=""
+
     if period==1:
-        period_list={"All Year":[1,13]} #period list from month# to month# NOT INCLUDED, 13 => december included
+        period_list={"Year":[1,13]} #period list from month# to month# NOT INCLUDED, 13 => december included
     elif period==2:
         period_list={"Winter":[12,3],"Spring":[3,6],"Summer":[6,9],"Autumn":[9,12]}
     elif period==3:
         period_list={}
         for i in range(1,13):
             period_list[month_abbr[i]]=[i, i+1]
+
+    res=_diff_time(datas, delta_t, T_min, T_max, time_max_event, period_list, max_limit)
+
+    text="\t"
+    period_text=""
     for i in range(T_min, T_max+1):
-        res=_diff_time(datas, delta_t, i, time_max_event, period_list)
-        text+="Delta T: "+str(i)+"\n"+"Year\t"
-        for key in res[list(res.keys())[0]]:
-            text+=key+"\t"*3
-        text+="\n"+"\tPos.\tNeg.\tTotal"*len(res[list(res.keys())[0]])+"\n"
-        for year in res:
-            text+=str(year)
-            for p in res[year]:
-                for i in res[year][p]:
-                    text+="\t"+str(res[year][p][i])
-            text+="\n"
+        text+=str(i)+"\t"*(len(period_list)*3+1)
+    for period in period_list:
+        period_text+=str(period)+"\t"*3
+    text+="\n\t"+(period_text+"\t")*(T_max-T_min)
+    text+="\n\t"+("pos\tneg\ttot\t"*len(period_list)+"\t")*(T_max-T_min)
+    for year in res:
+        text+="\n"+str(year)
+        for max in res[year]:
+             text+="\t"
+             for period in res[year][max]:
+                 if period!="during_event":
+                     for data in res[year][max][period]:
+                         text+=str(res[year][max][period][data])+"\t"
+
     return text
 
 #######################################################################################
