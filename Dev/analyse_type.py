@@ -70,9 +70,7 @@ def diff_time(datas, delta_t, time_max_event, period, T_min, T_max, max_limit):
 
                     elif datas[i]["date"]-new_event["last"]>time_max_event:
                         case["during_event"]=False
-                        if max_limit and new_event["max"]<temp+1:
-                            event_list=add_event(event_list, new_event, temp)
-                        elif not max_limit:
+                        if (max_limit and new_event["max"]<temp+1) or not max_limit:
                             event_list=add_event(event_list, new_event, temp)
 
             if j>=len(datas)-1:
@@ -83,9 +81,7 @@ def diff_time(datas, delta_t, time_max_event, period, T_min, T_max, max_limit):
             if case["during_event"]:
                 if abs(d_temp)>new_event["max"]:
                     new_event["max"]=abs(d_temp)
-                if max_limit and new_event["max"]<temp+1:
-                    event_list=add_event(event_list, new_event, temp)
-                elif not max_limit:
+                if (max_limit and new_event["max"]<temp+1) or not max_limit:
                     event_list=add_event(event_list, new_event, temp)
         return event_list
 
@@ -169,8 +165,9 @@ def rain_cumul(datas, step, min_time_beetween_event, rain_min, rain_max):
 #temp average: 1 average done for each day, 2 average over each same day of year, 3 comparaison each day/average of typical day
 #analy_type: =0 -> day to day, =1 -> per event
 
-def temp_average(datas, period_type, T_min, T_max):
-    def _temp_average(datas, delta_temp, analy_type):
+def temp_average(datas, period_type, T_min, T_max, max_limit):
+    #def _temp_average(datas, delta_temp, analy_type):
+    def _temp_average(datas, min, max, analy_type, max_limit):
         typical_average={}
         days_average={}
         events={}
@@ -189,7 +186,10 @@ def temp_average(datas, period_type, T_min, T_max):
             typical_average[day_numb]["numb_of_val"]+=1
 
             if data["date"].year not in events:
-                events[data["date"].year]={"pos":0, "neg":0, "tot":0}
+                new_temp={}
+                for temp in range(min, max+1):
+                    new_temp[temp]={"pos":0, "neg":0, "tot":0, "during_event":False}
+                events[data["date"].year]=new_temp
 
         for day in typical_average:
             if typical_average[day]["numb_of_val"]>0:
@@ -202,44 +202,63 @@ def temp_average(datas, period_type, T_min, T_max):
             else:
                 days_average[day]=0
 
-        during_event=False
+
         for day in days_average:
             day_numb=(day-(datetime.datetime(day.year, 1, 1)).date()).days+1
             diff=typical_average[day_numb]-days_average[day]
-            if abs(diff)>delta_temp and not during_event:
-                if diff>0:
-                    events[day.year]["pos"]+=1
-                else:
-                    events[day.year]["neg"]+=1
-                events[day.year]["tot"]+=1
+            for temp in range(min, max+1):
+                if abs(diff)>temp and not events[day.year][temp]["during_event"]:
+                    if not max_limit or (max_limit and abs(diff)<temp+1):
+                        if diff>0:
+                            events[day.year][temp]["pos"]+=1
+                        else:
+                            events[day.year][temp]["neg"]+=1
+                        events[day.year][temp]["tot"]+=1
 
-                if analy_type:
-                    during_event=True
+                    if analy_type:
+                        events[day.year][temp]["during_event"]=True
 
-            elif during_event and abs(diff)<delta_temp:
-                during_event=False
+                elif events[day.year][temp]["during_event"] and abs(diff)<temp:
+                    events[day.year][temp]["during_event"]=False
 
         return events
 
 
-    text="Delta_T\t"
-    res={}
-    for i in range(T_min, T_max+1):
-        text+=str(i)+"\t"*3
-    text+="\n"
+    # text="Delta_T\t"
+    # res={}
+    # for i in range(T_min, T_max+1):
+    #     text+=str(i)+"\t"*3
+    # text+="\n"
 
-    for i in range(T_min, T_max+1):
-        res[i]=_temp_average(datas, i, period_type)
-        for elem in res[i][list(res[i].keys())[0]]:
-            text+="\t"+elem
+    res=_temp_average(datas, T_min, T_max, period_type, max_limit)
+    # for i in range(T_min, T_max+1):
+    #     res[i]=_temp_average(datas, i, period_type)
+    #     for elem in res[i][list(res[i].keys())[0]]:
+    #         text+="\t"+elem
 
-    text+="\n"
-    for year in res[list(res.keys())[0]]:
-        text+=str(year)
-        for i in res:
-            for j in res[i]:
-                if j==year:
-                    for k in res[i][j]:
-                        text+="\t"+str(res[i][j][k])
-        text+="\n"
+
+    text="\t"
+    # period_text=""
+    for i in range(T_min, T_max+1):
+        text+=str(i)+"\t"*(3+1)
+    # for period in period_list:
+    #     period_text+=str(period)+"\t"*3
+    # text+="\n\t"+(period_text+"\t")*(T_max-T_min+1)
+    text+="\n\t"+("pos\tneg\ttot\t"+"\t")*(T_max-T_min+1)
+    for year in res:
+        text+="\n"+str(year)
+        for temp in res[year]:
+             text+="\t"
+             for data in res[year][temp]:
+                 if data!="during_event":
+                    text+=str(res[year][temp][data])+"\t"
+    # text+="\n"
+    # for year in res[list(res.keys())[0]]:
+    #     text+=str(year)
+    #     for i in res:
+    #         for j in res[i]:
+    #             if j==year:
+    #                 for k in res[i][j]:
+    #                     text+="\t"+str(res[i][j][k])
+    #     text+="\n"
     return text

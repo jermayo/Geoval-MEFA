@@ -247,13 +247,16 @@ class Window():
 
         if analyse=="Temp Average":
             period_type=self.period.get()
+            max_limit=False
             if self.auto_step.get():
                 min=int(self.Sb_tweak31.get())
                 max=int(self.Sb_tweak32.get())
+                max_limit=self.max_limit.get()
             else:
                 min=int(self.Sb_tweak31.get())
                 max=min
-            res_text=at.temp_average(GV.datas, period_type, min, max)
+
+            res_text=at.temp_average(GV.datas, period_type, min, max, max_limit)
 
 
         if self.output_toggle.get():
@@ -370,6 +373,7 @@ class Window():
 
     def toggle_auto_min(self, first):
         row=1
+        self.max_limit.set(0)
         if self.auto_step.get():
             self.Sb_L1_tweak1.destroy()
             self.Sb_tweak1.destroy()
@@ -462,18 +466,22 @@ class Window():
         self.toggle_auto_min3(False)
 
     def toggle_auto_min3(self, first):
-        row=2
+        row=1
+        self.max_limit.set(0)
         if self.auto_step.get():
             self.Sb_tweak31.destroy()
 
+            self.Sb_tweak30=tk.Checkbutton(self.tweak_frame, text="With Max", variable=self.max_limit)
+            self.Sb_tweak30.grid(row=row, column=2, columnspan=4)
+            row+=1
             self.Sb_L1_tweak3=tk.Label(self.tweak_frame, text="From:")
             self.Sb_L1_tweak3.grid(row=row,column=2)
             self.Sb_tweak31=tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3)
             self.Sb_tweak31.delete(0,tk.END)
             self.Sb_tweak31.insert(0,5)
             self.Sb_tweak31.grid(row=row,column=3)
-            self.Sb_L2_tweak1=tk.Label(self.tweak_frame, text="To:")
-            self.Sb_L2_tweak1.grid(row=row,column=4)
+            self.Sb_L2_tweak3=tk.Label(self.tweak_frame, text="To:")
+            self.Sb_L2_tweak3.grid(row=row,column=4)
             self.Sb_tweak32=tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3)
             self.Sb_tweak32.delete(0,tk.END)
             self.Sb_tweak32.insert(0,10)
@@ -483,9 +491,10 @@ class Window():
             if not first:
                 self.Sb_L1_tweak3.destroy()
                 self.Sb_tweak31.destroy()
-                self.Sb_L2_tweak1.destroy()
+                self.Sb_L2_tweak3.destroy()
                 self.Sb_tweak32.destroy()
-
+                self.Sb_tweak30.destroy()
+            row+=1
             self.Sb_tweak31=tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3)
             self.Sb_tweak31.delete(0,tk.END)
             self.Sb_tweak31.insert(0,8)
@@ -511,8 +520,8 @@ TEMP_LIMIT=100
 
 ANALYSE_TYPE = ("Difference Time", "Rain Cumul", "Temp Average")
 
-#DEFAULT_FILE_NAME="../test_file/month6.txt"
-DEFAULT_FILE_NAME=".txt"
+DEFAULT_FILE_NAME="../test_file/month6.txt"
+#DEFAULT_FILE_NAME=".txt"
 
 FILE_ENCODING="ISO 8859-1"        #Encoding not same on linux and windows (fgs wondows)
 
