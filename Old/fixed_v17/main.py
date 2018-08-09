@@ -128,7 +128,7 @@ class Window():
         #Main window
         self.w=tk.Tk()
         self.w.title("Meteorological Event Frequency Analysis")
-        #StringVar
+        #StringVar and IntVar
         self.analyse_type = tk.StringVar(self.w)
         self.analyse_type.set(ANALYSE_TYPE[0])
         self.output_toggle = tk.IntVar()
@@ -138,6 +138,8 @@ class Window():
         self.auto_step.set(0)
         self.max_limit=tk.IntVar()
         self.max_limit.set(0)
+        self.period=tk.IntVar()
+        self.period.set(1)
 
         tk.Label(self.w, text="File Name:").grid(row=1,column=0)
         self.E_file = tk.Entry(self.w)
@@ -276,7 +278,6 @@ class Window():
         self.auto_step.set(0)
         row=1
         if value=="Difference Time":
-            self.period=tk.IntVar()
             self.period.set(1)
 
             Cb_range_step=tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.cb_toggle_auto_min)

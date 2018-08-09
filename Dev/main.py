@@ -128,7 +128,7 @@ class Window():
         #Main window
         self.w=tk.Tk()
         self.w.title("Meteorological Event Frequency Analysis")
-        #StringVar
+        #StringVar and IntVar()
         self.analyse_type = tk.StringVar(self.w)
         self.analyse_type.set(ANALYSE_TYPE[0])
         self.output_toggle = tk.IntVar()
@@ -140,6 +140,8 @@ class Window():
         self.max_limit.set(0)
         self.daily_av=tk.IntVar()
         self.daily_av.set(0)
+        self.period=tk.IntVar()
+        self.period.set(1)
 
         self.w_list=[]
 
@@ -192,7 +194,7 @@ class Window():
         self.tweak_frame.grid(row=4,column=0, rowspan=2, columnspan=3, sticky=tk.N)
         self.L_info.grid(row=7,column=0, rowspan=2, columnspan=4, sticky=tk.NW)
 
-        self.change_analyse("Daily Aver")
+        self.change_analyse("Data Cleaning")
 
     def open_file(self):
         old_text=self.file_name
@@ -223,12 +225,10 @@ class Window():
 
         res_text=""
         extra_text=""
-        if analyse=="Daily Aver":
+        if analyse=="Data Cleaning":
             if self.daily_av.get():
-                res=at.daily_average(GV.datas)
-                res_text+="Day\tTemp\tRain"
-                for day in res:
-                    res_text+=str(day)+"\t"+str(res[day]["temp"])+"\t"+str(res[day]["rain"])+"\n"
+                res_text=at.daily_average(GV.datas)
+
             else:
                 for data in GV.datas:
                     res_text+="\n"
@@ -242,11 +242,11 @@ class Window():
             period=self.period.get()
             max_limit=False
             if self.auto_step.get():
-                min=int(self.Sb_tweak11.get())
-                max=int(self.Sb_tweak12.get())
+                min=int(self.w_list[3].get())
+                max=int(self.w_list[5].get())
                 max_limit=self.max_limit.get()
             else:
-                min=int(self.Sb_tweak1.get())
+                min=int(self.w_list[1].get())
                 max=min
             res_text=at.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
 
@@ -254,10 +254,10 @@ class Window():
             step=datetime.timedelta(hours=int(self.Sb_tweak1.get()))
             min_time_beetween_event=datetime.timedelta(minutes=int(self.Sb_tweak3.get()))
             if self.auto_step.get():
-                min=int(self.Sb_tweak21.get())
-                max=int(self.Sb_tweak22.get())
+                min=int(self.w_list[2].get())
+                max=int(self.w_list[4].get())
             else:
-                min=int(self.Sb_tweak2.get())
+                min=int(self.w_list[1].get())
                 max=min
 
             res_text=at.rain_cumul(GV.datas, step, min_time_beetween_event, min, max)
@@ -266,11 +266,11 @@ class Window():
             period_type=self.period.get()
             max_limit=False
             if self.auto_step.get():
-                min=int(self.Sb_tweak31.get())
-                max=int(self.Sb_tweak32.get())
+                min=int(self.w_list[2].get())
+                max=int(self.w_list[4].get())
                 max_limit=self.max_limit.get()
             else:
-                min=int(self.Sb_tweak31.get())
+                min=int(self.w_list[0].get())
                 max=min
 
             res_text=at.temp_average(GV.datas, period_type, min, max, max_limit)
@@ -293,27 +293,20 @@ class Window():
     def change_analyse(self, value):
         for child in self.tweak_frame.winfo_children():
             child.destroy()
-        self.w_list=[]
         self.auto_step.set(0)
         row=1
 
-        if value=="Daily Aver":
+        if value=="Data Cleaning":
             self.daily_av.set(0)
-
-            self.w_list.append(tk.Checkbutton(self.tweak_frame, variable=self.daily_av, text="Daily Average"))
-            self.w_list[-1].grid(row=row, column=2)
-            row+=1
-
-            self.L_info.config(text=DAILY_AVER_INFO)
+            tk.Checkbutton(self.tweak_frame, variable=self.daily_av, text="Daily Average").grid(row=row, column=2)
+            self.L_info.config(text=CLEANING_INFO)
 
         if value=="Difference Time":
-            self.period=tk.IntVar()
             self.period.set(1)
 
-            Cb_range_step=tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.cb_toggle_auto_min)
-            Cb_range_step.grid(row=row, column=1)
+            tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min).grid(row=row, column=1)
             row+=1
-            self.toggle_auto_min(True)
+            self.toggle_auto_min()
             row+=1
             tk.Label(self.tweak_frame, text="Time Diff:").grid(row=row,column=1)
             self.Sb_tweak2=tk.Spinbox(self.tweak_frame, from_=24, to_=1000, justify=tk.RIGHT, width=3, increment=24)
@@ -345,10 +338,10 @@ class Window():
             self.Sb_tweak1.grid(row=row,column=2)
             tk.Label(self.tweak_frame, text="Hours").grid(row=row,column=3)
             row+=1
-            Cb_range_step=tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.cb_toggle_auto_min2)
+            Cb_range_step=tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min2)
             Cb_range_step.grid(row=row, column=1)
             row+=1
-            self.toggle_auto_min2(True)
+            self.toggle_auto_min2()
             row+=1
             tk.Label(self.tweak_frame, text="Min time beet. events:").grid(row=row,column=1)
             self.Sb_tweak3=tk.Spinbox(self.tweak_frame, from_=0, to_=10000, justify=tk.RIGHT, width=3)
@@ -361,11 +354,11 @@ class Window():
 
         elif value=="Temp Average":
             self.period.set(0)
-            Cb_range_step=tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.cb_toggle_auto_min3)
+            Cb_range_step=tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min3)
             Cb_range_step.grid(row=row, column=1)
             row+=1
             tk.Label(self.tweak_frame, text="Delta Temp: ").grid(row=row, column=1)
-            self.toggle_auto_min3(True)
+            self.toggle_auto_min3()
             tk.Label(self.tweak_frame, text="°C").grid(row=row,column=6)
             row+=1
             tk.Label(self.tweak_frame, text="Type:").grid(row=row, column=1)
@@ -396,137 +389,104 @@ class Window():
         self.w.config(cursor="")
         self.load_w.destroy()
 
-    def cb_toggle_auto_min(self):
-        self.toggle_auto_min(False)
-
-    def toggle_auto_min(self, first):
+    def toggle_auto_min(self):
         row=1
         self.max_limit.set(0)
+        for widget in self.w_list:
+            widget.destroy()
+        self.w_list=[]
         if self.auto_step.get():
-            self.Sb_L1_tweak1.destroy()
-            self.Sb_tweak1.destroy()
-            self.Sb_L2_tweak1.destroy()
-
-            self.Sb_tweak0=tk.Checkbutton(self.tweak_frame, text="With Max", variable=self.max_limit)
-            self.Sb_tweak0.grid(row=row, column=2, columnspan=4)
+            self.w_list.append(tk.Checkbutton(self.tweak_frame, text="With Max", variable=self.max_limit))
+            self.w_list[-1].grid(row=row, column=2, columnspan=4)
             row+=1
-            self.Sb_L1_tweak1=tk.Label(self.tweak_frame, text="Delta Temp:")
-            self.Sb_L1_tweak1.grid(row=row,column=1)
-            self.Sb_L2_tweak1=tk.Label(self.tweak_frame, text="From:")
-            self.Sb_L2_tweak1.grid(row=row,column=2)
-            self.Sb_tweak11=tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3)
-            self.Sb_tweak11.delete(0,tk.END)
-            self.Sb_tweak11.insert(0,5)
-            self.Sb_tweak11.grid(row=row,column=3)
-            self.Sb_L3_tweak1=tk.Label(self.tweak_frame, text="To:")
-            self.Sb_L3_tweak1.grid(row=row,column=4)
-            self.Sb_tweak12=tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3)
-            self.Sb_tweak12.delete(0,tk.END)
-            self.Sb_tweak12.insert(0,20)
-            self.Sb_tweak12.grid(row=row,column=5)
-            self.Sb_L4_tweak1=tk.Label(self.tweak_frame, text="°C")
-            self.Sb_L4_tweak1.grid(row=row,column=6)
+            self.w_list.append(tk.Label(self.tweak_frame, text="Delta Temp:"))
+            self.w_list[-1].grid(row=row,column=1)
+            self.w_list.append(tk.Label(self.tweak_frame, text="From:"))
+            self.w_list[-1].grid(row=row,column=2)
+            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3))
+            self.w_list[-1].delete(0,tk.END)
+            self.w_list[-1].insert(0,5)
+            self.w_list[-1].grid(row=row,column=3)
+            self.w_list.append(tk.Label(self.tweak_frame, text="To:"))
+            self.w_list[-1].grid(row=row,column=4)
+            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3))
+            self.w_list[-1].delete(0,tk.END)
+            self.w_list[-1].insert(0,20)
+            self.w_list[-1].grid(row=row,column=5)
+            self.w_list.append(tk.Label(self.tweak_frame, text="°C"))
+            self.w_list[-1].grid(row=row,column=6)
         else:
-            if not first:
-                self.Sb_tweak0.destroy()
-                self.Sb_L1_tweak1.destroy()
-                self.Sb_tweak11.destroy()
-                self.Sb_L3_tweak1.destroy()
-                self.Sb_tweak12.destroy()
-                self.Sb_L4_tweak1.destroy()
             row+=1
-            self.Sb_L1_tweak1=tk.Label(self.tweak_frame, text="Delta Temp:")
-            self.Sb_L1_tweak1.grid(row=row,column=1)
-            self.Sb_tweak1=tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3)
-            self.Sb_tweak1.delete(0,tk.END)
-            self.Sb_tweak1.insert(0,10)
-            self.Sb_tweak1.grid(row=row,column=2)
-            self.Sb_L2_tweak1=tk.Label(self.tweak_frame, text="°C")
-            self.Sb_L2_tweak1.grid(row=row,column=3)
+            self.w_list.append(tk.Label(self.tweak_frame, text="Delta Temp:"))
+            self.w_list[-1].grid(row=row,column=1)
+            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3))
+            self.w_list[-1].delete(0,tk.END)
+            self.w_list[-1].insert(0,10)
+            self.w_list[-1].grid(row=row,column=2)
+            self.w_list.append(tk.Label(self.tweak_frame, text="°C"))
+            self.w_list[-1].grid(row=row,column=3)
 
-
-    def cb_toggle_auto_min2(self):
-        self.toggle_auto_min2(False)
-
-    def toggle_auto_min2(self, first):
+    def toggle_auto_min2(self):
         row=3
+        for widget in self.w_list:
+            widget.destroy()
+        self.w_list=[]
         if self.auto_step.get():
-            self.Sb_L1_tweak2.destroy()
-            self.Sb_L2_tweak2.destroy()
-            self.Sb_tweak2.destroy()
-            #self.w.update()
-
-            self.Sb_L1_tweak2=tk.Label(self.tweak_frame, text="Min Rain:")
-            self.Sb_L1_tweak2.grid(row=row,column=1)
-            self.Sb_L2_tweak2=tk.Label(self.tweak_frame, text="From:")
-            self.Sb_L2_tweak2.grid(row=row,column=2)
-            self.Sb_tweak21=tk.Spinbox(self.tweak_frame, from_=0, to_=1000000, justify=tk.RIGHT, width=3)
-            self.Sb_tweak21.delete(0,tk.END)
-            self.Sb_tweak21.insert(0,1)
-            self.Sb_tweak21.grid(row=row,column=3)
-            self.Sb_L3_tweak2=tk.Label(self.tweak_frame, text="To:")
-            self.Sb_L3_tweak2.grid(row=row,column=4)
-            self.Sb_tweak22=tk.Spinbox(self.tweak_frame, from_=0, to_=1000000, justify=tk.RIGHT, width=3)
-            self.Sb_tweak22.delete(0,tk.END)
-            self.Sb_tweak22.insert(0,15)
-            self.Sb_tweak22.grid(row=row,column=5)
-            self.Sb_L4_tweak2=tk.Label(self.tweak_frame, text="mm/time")
-            self.Sb_L4_tweak2.grid(row=row,column=6)
+            self.w_list.append(tk.Label(self.tweak_frame, text="Min Rain:"))
+            self.w_list[-1].grid(row=row,column=1)
+            self.w_list.append(tk.Label(self.tweak_frame, text="From:"))
+            self.w_list[-1].grid(row=row,column=2)
+            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=1000000, justify=tk.RIGHT, width=3))
+            self.w_list[-1].delete(0,tk.END)
+            self.w_list[-1].insert(0,1)
+            self.w_list[-1].grid(row=row,column=3)
+            self.w_list.append(tk.Label(self.tweak_frame, text="To:"))
+            self.w_list[-1].grid(row=row,column=4)
+            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=1000000, justify=tk.RIGHT, width=3))
+            self.w_list[-1].delete(0,tk.END)
+            self.w_list[-1].insert(0,15)
+            self.w_list[-1].grid(row=row,column=5)
+            self.w_list.append(tk.Label(self.tweak_frame, text="mm/time"))
+            self.w_list[-1].grid(row=row,column=6)
         else:
-            if not first:
-                self.Sb_L1_tweak2.destroy()
-                self.Sb_L2_tweak2.destroy()
-                self.Sb_L3_tweak2.destroy()
-                self.Sb_L4_tweak2.destroy()
-                self.Sb_tweak21.destroy()
-                self.Sb_tweak22.destroy()
+            self.w_list.append(tk.Label(self.tweak_frame, text="Min Rain:"))
+            self.w_list[-1].grid(row=row,column=1)
+            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=1000000, justify=tk.RIGHT, width=3))
+            self.w_list[-1].delete(0,tk.END)
+            self.w_list[-1].insert(0,5)
+            self.w_list[-1].grid(row=row,column=2)
+            self.w_list.append(tk.Label(self.tweak_frame, text="mm/time"))
+            self.w_list[-1].grid(row=row,column=3)
 
-            self.Sb_L1_tweak2=tk.Label(self.tweak_frame, text="Min Rain:")
-            self.Sb_L1_tweak2.grid(row=row,column=1)
-            self.Sb_tweak2=tk.Spinbox(self.tweak_frame, from_=0, to_=1000000, justify=tk.RIGHT, width=3)
-            self.Sb_tweak2.delete(0,tk.END)
-            self.Sb_tweak2.insert(0,5)
-            self.Sb_tweak2.grid(row=row,column=2)
-            self.Sb_L2_tweak2=tk.Label(self.tweak_frame, text="mm/time")
-            self.Sb_L2_tweak2.grid(row=row,column=3)
-
-    def cb_toggle_auto_min3(self):
-        self.toggle_auto_min3(False)
-
-    def toggle_auto_min3(self, first):
+    def toggle_auto_min3(self):
         row=1
         self.max_limit.set(0)
+        for widget in self.w_list:
+            widget.destroy()
+        self.w_list=[]
         if self.auto_step.get():
-            self.Sb_tweak31.destroy()
-
-            self.Sb_tweak30=tk.Checkbutton(self.tweak_frame, text="With Max", variable=self.max_limit)
-            self.Sb_tweak30.grid(row=row, column=2, columnspan=4)
+            self.w_list.append(tk.Checkbutton(self.tweak_frame, text="With Max", variable=self.max_limit))
+            self.w_list[-1].grid(row=row, column=2, columnspan=4)
             row+=1
-            self.Sb_L1_tweak3=tk.Label(self.tweak_frame, text="From:")
-            self.Sb_L1_tweak3.grid(row=row,column=2)
-            self.Sb_tweak31=tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3)
-            self.Sb_tweak31.delete(0,tk.END)
-            self.Sb_tweak31.insert(0,5)
-            self.Sb_tweak31.grid(row=row,column=3)
-            self.Sb_L2_tweak3=tk.Label(self.tweak_frame, text="To:")
-            self.Sb_L2_tweak3.grid(row=row,column=4)
-            self.Sb_tweak32=tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3)
-            self.Sb_tweak32.delete(0,tk.END)
-            self.Sb_tweak32.insert(0,10)
-            self.Sb_tweak32.grid(row=row,column=5)
+            self.w_list.append(tk.Label(self.tweak_frame, text="From:"))
+            self.w_list[-1].grid(row=row,column=2)
+            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3))
+            self.w_list[-1].delete(0,tk.END)
+            self.w_list[-1].insert(0,5)
+            self.w_list[-1].grid(row=row,column=3)
+            self.w_list.append(tk.Label(self.tweak_frame, text="To:"))
+            self.w_list[-1].grid(row=row,column=4)
+            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3))
+            self.w_list[-1].delete(0,tk.END)
+            self.w_list[-1].insert(0,10)
+            self.w_list[-1].grid(row=row,column=5)
 
         else:
-            if not first:
-                self.Sb_L1_tweak3.destroy()
-                self.Sb_tweak31.destroy()
-                self.Sb_L2_tweak3.destroy()
-                self.Sb_tweak32.destroy()
-                self.Sb_tweak30.destroy()
             row+=1
-            self.Sb_tweak31=tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3)
-            self.Sb_tweak31.delete(0,tk.END)
-            self.Sb_tweak31.insert(0,8)
-            self.Sb_tweak31.grid(row=row,column=2)
+            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3))
+            self.w_list[-1].delete(0,tk.END)
+            self.w_list[-1].insert(0,8)
+            self.w_list[-1].grid(row=row,column=2)
 
 
 
@@ -546,7 +506,7 @@ RAIN_LIMIT=100
 TEMP_LIMIT=100
 
 
-ANALYSE_TYPE = ("Daily Aver", "Difference Time", "Rain Cumul", "Temp Average")
+ANALYSE_TYPE = ("Data Cleaning", "Difference Time", "Rain Cumul", "Temp Average")
 
 DEFAULT_FILE_NAME="../test_file/month6.txt"
 #DEFAULT_FILE_NAME=".txt"
@@ -558,8 +518,8 @@ FILE_ENCODING="ISO 8859-1"        #Encoding not same on linux and windows (fgs w
 column_format_name=["STA", "JAHR", "MO", "TG", "HH", "MM"]
 column_format=["Station", "Year", "Month", "Day", "Hour", "Minutes"]
 
-DAILY_AVER_INFO=""" Description:
-Daily Average:
+CLEANING_INFO=""" Description:
+Data Cleaning:
 Does what it says."""
 DIFF_TIME_INFO="""  Description:
 Difference over time:

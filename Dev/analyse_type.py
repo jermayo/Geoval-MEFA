@@ -20,10 +20,12 @@ def daily_average(datas):
         days[date]["rain"]+=data["rain"]
         days[date]["numb_of_val"]+=1
 
+    res_text="Day\t\tTemp\tRain\n"
     for day in days:
-        days[day]["temp"]=days[day]["temp"]/days[day]["numb_of_val"]
+        temp=days[day]["temp"]/days[day]["numb_of_val"]
+        res_text+="{}\t{:.3f}\t{:.3f}\n".format(day,temp,days[day]["rain"])
 
-    return days
+    return res_text
 
 #######################################################################################
 ########################## DIFF TIME ##################################################
@@ -209,6 +211,7 @@ def temp_average(datas, period_type, T_min, T_max, max_limit):
         for day in typical_average:
             if typical_average[day]["numb_of_val"]>0:
                 typical_average[day]=typical_average[day]["val"]/typical_average[day]["numb_of_val"]
+                #print(day,typical_average[day])
             else:
                 typical_average[day]=0
         for day in days_average:
