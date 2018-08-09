@@ -10,6 +10,21 @@ def _date_beetween(date, month_start, month_end):
         return True
     return False
 
+def daily_average(datas):
+    days=OrderedDict()
+    for data in datas:
+        date=data["date"].date()
+        if date not in days:
+            days[date]={"temp":0, "rain":0, "numb_of_val":0}
+        days[date]["temp"]+=data["temp"]
+        days[date]["rain"]+=data["rain"]
+        days[date]["numb_of_val"]+=1
+
+    for day in days:
+        days[day]["temp"]=days[day]["temp"]/days[day]["numb_of_val"]
+
+    return days
+
 #######################################################################################
 ########################## DIFF TIME ##################################################
 #Difference of temp with hours before
@@ -223,28 +238,11 @@ def temp_average(datas, period_type, T_min, T_max, max_limit):
 
         return events
 
-
-    # text="Delta_T\t"
-    # res={}
-    # for i in range(T_min, T_max+1):
-    #     text+=str(i)+"\t"*3
-    # text+="\n"
-
     res=_temp_average(datas, T_min, T_max, period_type, max_limit)
-    # for i in range(T_min, T_max+1):
-    #     res[i]=_temp_average(datas, i, period_type)
-    #     for elem in res[i][list(res[i].keys())[0]]:
-    #         text+="\t"+elem
-
-
-    text="\t"
-    # period_text=""
+    text="\t\t"
     for i in range(T_min, T_max+1):
         text+=str(i)+"\t"*(3+1)
-    # for period in period_list:
-    #     period_text+=str(period)+"\t"*3
-    # text+="\n\t"+(period_text+"\t")*(T_max-T_min+1)
-    text+="\n\t"+("pos\tneg\ttot\t"+"\t")*(T_max-T_min+1)
+    text+="\n\t\t"+("pos\tneg\ttot\t"+"\t")*(T_max-T_min+1)
     for year in res:
         text+="\n"+str(year)
         for temp in res[year]:
@@ -252,13 +250,4 @@ def temp_average(datas, period_type, T_min, T_max, max_limit):
              for data in res[year][temp]:
                  if data!="during_event":
                     text+=str(res[year][temp][data])+"\t"
-    # text+="\n"
-    # for year in res[list(res.keys())[0]]:
-    #     text+=str(year)
-    #     for i in res:
-    #         for j in res[i]:
-    #             if j==year:
-    #                 for k in res[i][j]:
-    #                     text+="\t"+str(res[i][j][k])
-    #     text+="\n"
     return text

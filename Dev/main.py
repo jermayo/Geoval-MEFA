@@ -138,6 +138,10 @@ class Window():
         self.auto_step.set(0)
         self.max_limit=tk.IntVar()
         self.max_limit.set(0)
+        self.daily_av=tk.IntVar()
+        self.daily_av.set(0)
+
+        self.w_list=[]
 
         tk.Label(self.w, text="File Name:").grid(row=1,column=0)
         self.E_file = tk.Entry(self.w)
@@ -188,7 +192,7 @@ class Window():
         self.tweak_frame.grid(row=4,column=0, rowspan=2, columnspan=3, sticky=tk.N)
         self.L_info.grid(row=7,column=0, rowspan=2, columnspan=4, sticky=tk.NW)
 
-        self.change_analyse("Difference Time")
+        self.change_analyse("Daily Aver")
 
     def open_file(self):
         old_text=self.file_name
@@ -219,6 +223,19 @@ class Window():
 
         res_text=""
         extra_text=""
+        if analyse=="Daily Aver":
+            if self.daily_av.get():
+                res=at.daily_average(GV.datas)
+                res_text+="Day\tTemp\tRain"
+                for day in res:
+                    res_text+=str(day)+"\t"+str(res[day]["temp"])+"\t"+str(res[day]["rain"])+"\n"
+            else:
+                for data in GV.datas:
+                    res_text+="\n"
+                    for elem in data:
+                        res_text+=str(data[elem])+"\t"
+
+
         if analyse=="Difference Time":
             delta_t=datetime.timedelta(hours=int(self.Sb_tweak2.get()))
             time_max_event=datetime.timedelta(hours=int(self.Sb_tweak3.get()))
@@ -276,8 +293,19 @@ class Window():
     def change_analyse(self, value):
         for child in self.tweak_frame.winfo_children():
             child.destroy()
+        self.w_list=[]
         self.auto_step.set(0)
         row=1
+
+        if value=="Daily Aver":
+            self.daily_av.set(0)
+
+            self.w_list.append(tk.Checkbutton(self.tweak_frame, variable=self.daily_av, text="Daily Average"))
+            self.w_list[-1].grid(row=row, column=2)
+            row+=1
+
+            self.L_info.config(text=DAILY_AVER_INFO)
+
         if value=="Difference Time":
             self.period=tk.IntVar()
             self.period.set(1)
@@ -518,7 +546,7 @@ RAIN_LIMIT=100
 TEMP_LIMIT=100
 
 
-ANALYSE_TYPE = ("Difference Time", "Rain Cumul", "Temp Average")
+ANALYSE_TYPE = ("Daily Aver", "Difference Time", "Rain Cumul", "Temp Average")
 
 DEFAULT_FILE_NAME="../test_file/month6.txt"
 #DEFAULT_FILE_NAME=".txt"
@@ -530,6 +558,9 @@ FILE_ENCODING="ISO 8859-1"        #Encoding not same on linux and windows (fgs w
 column_format_name=["STA", "JAHR", "MO", "TG", "HH", "MM"]
 column_format=["Station", "Year", "Month", "Day", "Hour", "Minutes"]
 
+DAILY_AVER_INFO=""" Description:
+Daily Average:
+Does what it says."""
 DIFF_TIME_INFO="""  Description:
 Difference over time:
 Event starts if the difference beetween a value and the value recorded "Time Diff" before is greater than "Delta Temp".
