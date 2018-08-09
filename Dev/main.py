@@ -128,6 +128,7 @@ class Window():
         #Main window
         self.w=tk.Tk()
         self.w.title("Meteorological Event Frequency Analysis")
+        self.w.tk.call('wm', 'iconphoto', self.w._w, tk.PhotoImage(file='icone.png'))
         #StringVar and IntVar()
         self.analyse_type = tk.StringVar(self.w)
         self.analyse_type.set(ANALYSE_TYPE[0])
@@ -215,15 +216,28 @@ class Window():
             messagebox.showerror("Error", "File not found (404)")
             self.L_file.config(text = old_text)
 
+    def find_min_max(self, w_single, w_min, w_max):
+        if self.auto_step.get():
+            min=int(self.w_list[w_min].get())
+            max=int(self.w_list[w_max].get())
+            max_limit=self.max_limit.get()
+        else:
+            min=int(self.w_list[w_single].get())
+            max=min
+        if min>max:
+            messagebox.showerror("Error", "Minimal value greater than maximal.\n(You fool)")
+            return False
+        return True, min, max
 
     def analyse(self):
+
         analyse=self.analyse_type.get()
         self.result_frame.grid_remove()
         self.L_anayse.config(text="Analysing data ...")
         self.L_anayse.update_idletasks()
         self.load_begin()
 
-        res_text=""
+        res_text=analyse+"\n"
         extra_text=""
         if analyse=="Data Cleaning":
             if self.daily_av.get():
@@ -235,59 +249,41 @@ class Window():
                     for elem in data:
                         res_text+=str(data[elem])+"\t"
 
-
         elif analyse=="Difference Time":
             delta_t=datetime.timedelta(hours=int(self.Sb_tweak2.get()))
             time_max_event=datetime.timedelta(hours=int(self.Sb_tweak3.get()))
             period=self.period.get()
             max_limit=False
-            if self.auto_step.get():
-                min=int(self.w_list[3].get())
-                max=int(self.w_list[5].get())
-                max_limit=self.max_limit.get()
-            else:
-                min=int(self.w_list[1].get())
-                max=min
-            res_text=at.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
+
+            go, min, max=self.find_min_max(1, 3, 5)
+            if go:
+                res_text+=at.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
 
         elif analyse=="Rain Cumul":
-            step=datetime.timedelta(hours=int(self.Sb_tweak1.get()))
-            min_time_beetween_event=datetime.timedelta(minutes=int(self.Sb_tweak3.get()))
-            if self.auto_step.get():
-                min=int(self.w_list[2].get())
-                max=int(self.w_list[4].get())
-            else:
-                min=int(self.w_list[1].get())
-                max=min
+            step=int(self.Sb_tweak1.get())
+            min_time_beetween_event=int(self.Sb_tweak3.get())
 
-            res_text=at.rain_cumul(GV.datas, step, min_time_beetween_event, min, max)
+            go, min, max=self.find_min_max(1, 2, 4)
+            if go:
+                res_text+=at.rain_cumul(GV.datas, step, min_time_beetween_event, min, max)
 
         elif analyse=="Temp Average":
             period_type=self.period.get()
             max_limit=False
-            if self.auto_step.get():
-                min=int(self.w_list[2].get())
-                max=int(self.w_list[4].get())
-                max_limit=self.max_limit.get()
-            else:
-                min=int(self.w_list[0].get())
-                max=min
 
-            res_text=at.temp_average(GV.datas, period_type, min, max, max_limit)
+            go, min, max=self.find_min_max(0, 2, 4)
+            if go:
+                res_text+=at.temp_average(GV.datas, period_type, min, max, max_limit)
 
         elif analyse=="Day To Span Average":
             span=int(self.Sb_tweak1.get())
+            days=int(self.Sb_tweak2.get())
             analy_type=self.period.get()
             max_limit=False
-            if self.auto_step.get():
-                min=int(self.w_list[3].get())
-                max=int(self.w_list[5].get())
-                max_limit=self.max_limit.get()
-            else:
-                min=int(self.w_list[1].get())
-                max=min
 
-            res_text=at.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type)
+            go, min, max=self.find_min_max(1, 3, 5)
+            if go:
+                res_text+=at.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days)
 
         if self.output_toggle.get():
             file_write(self.E_output.get(),res_text, GV.read_log)
@@ -340,7 +336,7 @@ class Window():
 
             tk.Label(self.tweak_frame, text="(Season: Winter (Dec, Jan, Feb), and so on...)").grid(row=5, column=1, columnspan=3)
 
-            self.L_info.config(text=DIFF_TIME_INFO+END_INFO)
+            self.L_info.config(text=DIFF_TIME_INFO+AUTO_RANGE_INFO+WITH_MAX_INFO)
 
 
         elif value=="Rain Cumul":
@@ -362,7 +358,7 @@ class Window():
             self.Sb_tweak3.grid(row=row,column=2)
             tk.Label(self.tweak_frame, text="Min").grid(row=row,column=3)
 
-            self.L_info.config(text=RAIN_CUMUL_INFO+END_INFO)
+            self.L_info.config(text=RAIN_CUMUL_INFO+AUTO_RANGE_INFO)
 
         elif value=="Temp Average":
             self.period.set(0)
@@ -376,7 +372,7 @@ class Window():
             tk.Radiobutton(self.tweak_frame, var=self.period, text="Day to day", value=0).grid(row=row, column=2, sticky=tk.W, columnspan=10)
             tk.Radiobutton(self.tweak_frame, var=self.period, text="Per event", value=1).grid(row=row+1, column=2, sticky=tk.W, columnspan=10)
 
-            self.L_info.config(text=TEMP_AVERAGE_INFO+END_INFO)
+            self.L_info.config(text=TEMP_AVERAGE_INFO+AUTO_RANGE_INFO)
 
         elif value=="Day To Span Average":
             self.period.set(0)
@@ -393,10 +389,15 @@ class Window():
             tk.Radiobutton(self.tweak_frame, var=self.period, text="Per event", value=1).grid(row=row+1, column=9, sticky=tk.W)
             row+=1
             self.toggle_auto_min4()
+            row+=1
+            tk.Label(self.tweak_frame, text="Min time beet. events:").grid(row=row,column=1)
+            self.Sb_tweak2=tk.Spinbox(self.tweak_frame, from_=0, to_=10000, justify=tk.RIGHT, width=3)
+            self.Sb_tweak2.delete(0,tk.END)
+            self.Sb_tweak2.insert(0,2)
+            self.Sb_tweak2.grid(row=row,column=2)
+            tk.Label(self.tweak_frame, text="Days").grid(row=row,column=3)
 
-
-
-            self.L_info.config(text=DAY_TO_SPAN_INFO+END_INFO)
+            self.L_info.config(text=DAY_TO_SPAN_INFO+AUTO_RANGE_INFO+WITH_MAX_INFO)
 
 
     def load_begin(self):
@@ -407,7 +408,7 @@ class Window():
 
         self.w.config(cursor="watch")
 
-        self.load_w=tk.Tk()
+        self.load_w=tk.Toplevel()
         self.load_w.title("Loading")
         self.load_w.geometry('%dx%d+%d+%d' % (load_w_width, load_w_height, x, y))
         tk.Label(self.load_w, text="Loading, please wait...\n(This can take a few minutes)").pack()
@@ -451,15 +452,13 @@ class Window():
         for widget in self.w_list:
             widget.destroy()
         self.w_list=[]
+        self.w_list.append(tk.Label(self.tweak_frame, text="Min Rain:"))
+        self.w_list[-1].grid(row=row,column=1)
         if self.auto_step.get():
-            self.w_list.append(tk.Label(self.tweak_frame, text="Min Rain:"))
-            self.w_list[-1].grid(row=row,column=1)
             self.create_range(row, 2, 1, 15)
             self.w_list.append(tk.Label(self.tweak_frame, text="mm/time"))
             self.w_list[-1].grid(row=row,column=6)
         else:
-            self.w_list.append(tk.Label(self.tweak_frame, text="Min Rain:"))
-            self.w_list[-1].grid(row=row,column=1)
             self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=1000000, justify=tk.RIGHT, width=3))
             self.w_list[-1].delete(0,tk.END)
             self.w_list[-1].insert(0,5)
@@ -542,8 +541,8 @@ TEMP_LIMIT=100
 
 ANALYSE_TYPE = ("Data Cleaning", "Difference Time", "Rain Cumul", "Temp Average", "Day To Span Average")
 
-DEFAULT_FILE_NAME="../test_file/month6.txt"
-#DEFAULT_FILE_NAME=".txt"
+#DEFAULT_FILE_NAME="../test_file/month6.txt"
+DEFAULT_FILE_NAME=".txt"
 
 FILE_ENCODING="ISO 8859-1"        #Encoding not same on linux and windows (fgs wondows)
 
@@ -559,8 +558,7 @@ DIFF_TIME_INFO="""  Description:
 Difference over time:
 Event starts if the difference beetween a value and the value recorded "Time Diff" before is greater than "Delta Temp".
 It ends after "Max event time" so every value greater than "Delta Temp" in that period is not taken into account. The period
-allows one to look at the number of event per period of each year. When 'With max' (only possible for Auto Range) is checked,
-an event is counted ONLY in the temperature corresponding to it's maximal value."""
+allows one to look at the number of event per period of each year. """
 RAIN_CUMUL_INFO=""" Description:
 Rain cumul:
 Events starts when the rain cumul in the last "step" hours is greater than "Min Rain".
@@ -574,8 +572,14 @@ The typical average is calulated for each day of the year as the average of the 
 (For exemple: take the daily average of each July 20th every year and make the average of them all, that is the typical daily average)
 "Per event" implies that if two consecutive days are events, they only count as one,
 whereas "day to day" counts every day that is an event."""
-DAY_TO_SPAN_INFO="""TO COMPLETE!"""
-END_INFO="""\n\nAuto Range: automaticaly makes the analyses for all values beetween set boundaries"""
+DAY_TO_SPAN_INFO="""    Description:
+Day to span average:
+Event happens if the difference bettween the daily average and the average of 'span' days before and after is greater than 'Delta Temp'.
+With 'Day to day': Every day that is over counts, with 'Per Event': Event stops if the daily average gets under 'Delta Temp' for more
+than 'Min time beet. events' days."""
+AUTO_RANGE_INFO="""\n\nAuto Range: automaticaly makes the analyses for all values beetween set boundaries"""
+WITH_MAX_INFO="""
+With 'With max' (only possible for Auto Range), an event is counted ONLY in the temperature corresponding to it's maximal value."""
 
 #######################################################################################
 #                            Main programme                                           #

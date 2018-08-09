@@ -5,6 +5,6 @@ pyinstaller -F main.py
 echo ""
 echo "Cleaning..."
 echo ""
-mv dist/main mefa_v17.x
+mv dist/main mefa_v18.x
 rm -r build/ __pycache__/ main.spec dist/
 echo "Done!"
