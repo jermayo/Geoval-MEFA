@@ -10,6 +10,22 @@ def _date_beetween(date, month_start, month_end):
         return True
     return False
 
+def check_new_year(year, events, min, max, periods=False):
+    if year not in events:
+        new_period=OrderedDict()
+        for temp in range(min, max+1):
+            new_max=OrderedDict()
+            if periods:
+                for key in periods:
+                    new_max[key]={"pos":0, "neg":0, "total":0}
+                new_max["during_event"]=False
+            else:
+                new_max={"pos":0, "neg":0, "total":0, "during_event":False}
+            new_period[temp]=new_max
+        events[year]=new_period
+    return events
+
+
 def daily_average(datas):
     days=OrderedDict()
     for data in datas:
@@ -19,13 +35,43 @@ def daily_average(datas):
         days[date]["temp"]+=data["temp"]
         days[date]["rain"]+=data["rain"]
         days[date]["numb_of_val"]+=1
+    return days
 
+def build_text(res, T_min, T_max, period_list=[""]):
+    text="\t"
+    period_text=""
+    for i in range(T_min, T_max+1):
+        text+=str(i)+"\t"*(len(period_list)*3+1)
+    for period in period_list:
+        period_text+=str(period)+"\t"*3
+    text+="\n\t"+(period_text+"\t")*(T_max-T_min+1)
+    text+="\n\t"+("pos\tneg\ttot\t"*len(period_list)+"\t")*(T_max-T_min+1)
+    for year in res:
+        text+="\n"+str(year)
+        for temp in res[year]:
+            text+="\t"
+            if period_list==[""]:
+                for data in res[year][temp]:
+                    if data!="during_event":
+                        text+=str(res[year][temp][data])+"\t"
+            else:
+                for period in res[year][temp]:
+                    if period!="during_event":
+                        for data in res[year][temp][period]:
+                            text+=str(res[year][temp][period][data])+"\t"
+    return text
+
+#######################################################################################
+########################## Clean Daily Average ########################################
+def clean_daily_average(datas):
+    days=daily_average(datas)
     res_text="Day\t\tTemp\tRain\n"
     for day in days:
         temp=days[day]["temp"]/days[day]["numb_of_val"]
         res_text+="{}\t{:.3f}\t{:.3f}\n".format(day,temp,days[day]["rain"])
 
     return res_text
+
 
 #######################################################################################
 ########################## DIFF TIME ##################################################
@@ -45,20 +91,10 @@ def diff_time(datas, delta_t, time_max_event, period, T_min, T_max, max_limit):
 
         #month_start and month end of type int, month_end NOT included, 13 means decembre included
         event_list=OrderedDict()
-        year_list=[]
 
         for i in range(0,len(datas)):
             year=datas[i]["date"].year
-            if year not in year_list:
-                year_list.append(year)
-                new_period=OrderedDict()
-                for temp in range(min, max+1):
-                    new_max=OrderedDict()
-                    for key in periods:
-                        new_max[key]={"pos":0, "neg":0, "total":0}
-                    new_max["during_event"]=False
-                    new_period[temp]=new_max
-                event_list[year]=new_period
+            event_list=check_new_year(year, event_list, min, max, periods)
 
             j=i
             while datas[j]["date"]-datas[i]["date"]<delta_t:
@@ -114,22 +150,7 @@ def diff_time(datas, delta_t, time_max_event, period, T_min, T_max, max_limit):
 
     res=_diff_time(datas, delta_t, T_min, T_max, time_max_event, period_list, max_limit)
 
-    text="\t"
-    period_text=""
-    for i in range(T_min, T_max+1):
-        text+=str(i)+"\t"*(len(period_list)*3+1)
-    for period in period_list:
-        period_text+=str(period)+"\t"*3
-    text+="\n\t"+(period_text+"\t")*(T_max-T_min+1)
-    text+="\n\t"+("pos\tneg\ttot\t"*len(period_list)+"\t")*(T_max-T_min+1)
-    for year in res:
-        text+="\n"+str(year)
-        for max in res[year]:
-             text+="\t"
-             for period in res[year][max]:
-                 if period!="during_event":
-                     for data in res[year][max][period]:
-                         text+=str(res[year][max][period][data])+"\t"
+    text=build_text(res, T_min, T_max, period_list=period_list)
 
     return text
 
@@ -242,15 +263,46 @@ def temp_average(datas, period_type, T_min, T_max, max_limit):
         return events
 
     res=_temp_average(datas, T_min, T_max, period_type, max_limit)
-    text="\t\t"
-    for i in range(T_min, T_max+1):
-        text+=str(i)+"\t"*(3+1)
-    text+="\n\t\t"+("pos\tneg\ttot\t"+"\t")*(T_max-T_min+1)
-    for year in res:
-        text+="\n"+str(year)
-        for temp in res[year]:
-             text+="\t"
-             for data in res[year][temp]:
-                 if data!="during_event":
-                    text+=str(res[year][temp][data])+"\t"
+    text=build_text(res, T_min, T_max)
+    return text
+
+def day_to_span_av(datas, span, min, max, max_limit, analy_type):
+    events=OrderedDict()
+    days=daily_average(datas)
+
+    for min_temp in range(min, max+1):
+        for day in days:
+            year=day.year
+            events=check_new_year(year, events, min, max)
+
+            average=0
+            numb_of_value=0
+
+            for i in range(1, span): #span in days
+                day_before=day-datetime.timedelta(days=i)
+                day_after=day+datetime.timedelta(days=i)
+                if day_before in days:
+                    average+=days[day_before]["temp"]
+                    numb_of_value+=1
+                if day_after in days:
+                    average+=days[day_after]["temp"]
+                    numb_of_value+=1
+
+            average=average/numb_of_value
+
+            d_temp=days[day]["temp"]-average
+            if abs(d_temp)>=min_temp and not events[year][min_temp]["during_event"]:
+                if not max_limit or (max_limit and abs(d_temp)<min_temp+1):
+                    if analy_type:
+                        events[year][min_temp]["during_event"]=True
+
+                    if d_temp>0:
+                        events[year][min_temp]["pos"]+=1
+                    elif d_temp<0:
+                        events[year][min_temp]["neg"]+=1
+                    events[year][min_temp]["total"]+=1
+
+    text=build_text(events, min, max)
+
+
     return text

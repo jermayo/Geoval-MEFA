@@ -227,7 +227,7 @@ class Window():
         extra_text=""
         if analyse=="Data Cleaning":
             if self.daily_av.get():
-                res_text=at.daily_average(GV.datas)
+                res_text=at.clean_daily_average(GV.datas)
 
             else:
                 for data in GV.datas:
@@ -236,7 +236,7 @@ class Window():
                         res_text+=str(data[elem])+"\t"
 
 
-        if analyse=="Difference Time":
+        elif analyse=="Difference Time":
             delta_t=datetime.timedelta(hours=int(self.Sb_tweak2.get()))
             time_max_event=datetime.timedelta(hours=int(self.Sb_tweak3.get()))
             period=self.period.get()
@@ -250,7 +250,7 @@ class Window():
                 max=min
             res_text=at.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
 
-        if analyse=="Rain Cumul":
+        elif analyse=="Rain Cumul":
             step=datetime.timedelta(hours=int(self.Sb_tweak1.get()))
             min_time_beetween_event=datetime.timedelta(minutes=int(self.Sb_tweak3.get()))
             if self.auto_step.get():
@@ -262,7 +262,7 @@ class Window():
 
             res_text=at.rain_cumul(GV.datas, step, min_time_beetween_event, min, max)
 
-        if analyse=="Temp Average":
+        elif analyse=="Temp Average":
             period_type=self.period.get()
             max_limit=False
             if self.auto_step.get():
@@ -275,6 +275,19 @@ class Window():
 
             res_text=at.temp_average(GV.datas, period_type, min, max, max_limit)
 
+        elif analyse=="Day To Span Average":
+            span=int(self.Sb_tweak1.get())
+            analy_type=self.period.get()
+            max_limit=False
+            if self.auto_step.get():
+                min=int(self.w_list[3].get())
+                max=int(self.w_list[5].get())
+                max_limit=self.max_limit.get()
+            else:
+                min=int(self.w_list[1].get())
+                max=min
+
+            res_text=at.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type)
 
         if self.output_toggle.get():
             file_write(self.E_output.get(),res_text, GV.read_log)
@@ -338,8 +351,7 @@ class Window():
             self.Sb_tweak1.grid(row=row,column=2)
             tk.Label(self.tweak_frame, text="Hours").grid(row=row,column=3)
             row+=1
-            Cb_range_step=tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min2)
-            Cb_range_step.grid(row=row, column=1)
+            tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min2).grid(row=row, column=1)
             row+=1
             self.toggle_auto_min2()
             row+=1
@@ -354,8 +366,7 @@ class Window():
 
         elif value=="Temp Average":
             self.period.set(0)
-            Cb_range_step=tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min3)
-            Cb_range_step.grid(row=row, column=1)
+            tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min3).grid(row=row, column=1)
             row+=1
             tk.Label(self.tweak_frame, text="Delta Temp: ").grid(row=row, column=1)
             self.toggle_auto_min3()
@@ -366,6 +377,26 @@ class Window():
             tk.Radiobutton(self.tweak_frame, var=self.period, text="Per event", value=1).grid(row=row+1, column=2, sticky=tk.W, columnspan=10)
 
             self.L_info.config(text=TEMP_AVERAGE_INFO+END_INFO)
+
+        elif value=="Day To Span Average":
+            self.period.set(0)
+            tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min4).grid(row=row, column=1,columnspan=2)
+            tk.Label(self.tweak_frame, text="Type:").grid(row=row, column=9)
+            row+=1
+            tk.Label(self.tweak_frame, text="Span:").grid(row=row,column=1)
+            self.Sb_tweak1=tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3)
+            self.Sb_tweak1.delete(0,tk.END)
+            self.Sb_tweak1.insert(0,30)
+            self.Sb_tweak1.grid(row=row,column=2)
+            tk.Label(self.tweak_frame, text="Days").grid(row=row, column=3)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="Day to day", value=0).grid(row=row, column=9, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="Per event", value=1).grid(row=row+1, column=9, sticky=tk.W)
+            row+=1
+            self.toggle_auto_min4()
+
+
+
+            self.L_info.config(text=DAY_TO_SPAN_INFO+END_INFO)
 
 
     def load_begin(self):
@@ -401,18 +432,7 @@ class Window():
             row+=1
             self.w_list.append(tk.Label(self.tweak_frame, text="Delta Temp:"))
             self.w_list[-1].grid(row=row,column=1)
-            self.w_list.append(tk.Label(self.tweak_frame, text="From:"))
-            self.w_list[-1].grid(row=row,column=2)
-            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3))
-            self.w_list[-1].delete(0,tk.END)
-            self.w_list[-1].insert(0,5)
-            self.w_list[-1].grid(row=row,column=3)
-            self.w_list.append(tk.Label(self.tweak_frame, text="To:"))
-            self.w_list[-1].grid(row=row,column=4)
-            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3))
-            self.w_list[-1].delete(0,tk.END)
-            self.w_list[-1].insert(0,20)
-            self.w_list[-1].grid(row=row,column=5)
+            self.create_range(row, 2, 5, 20)
             self.w_list.append(tk.Label(self.tweak_frame, text="°C"))
             self.w_list[-1].grid(row=row,column=6)
         else:
@@ -434,18 +454,7 @@ class Window():
         if self.auto_step.get():
             self.w_list.append(tk.Label(self.tweak_frame, text="Min Rain:"))
             self.w_list[-1].grid(row=row,column=1)
-            self.w_list.append(tk.Label(self.tweak_frame, text="From:"))
-            self.w_list[-1].grid(row=row,column=2)
-            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=1000000, justify=tk.RIGHT, width=3))
-            self.w_list[-1].delete(0,tk.END)
-            self.w_list[-1].insert(0,1)
-            self.w_list[-1].grid(row=row,column=3)
-            self.w_list.append(tk.Label(self.tweak_frame, text="To:"))
-            self.w_list[-1].grid(row=row,column=4)
-            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=1000000, justify=tk.RIGHT, width=3))
-            self.w_list[-1].delete(0,tk.END)
-            self.w_list[-1].insert(0,15)
-            self.w_list[-1].grid(row=row,column=5)
+            self.create_range(row, 2, 1, 15)
             self.w_list.append(tk.Label(self.tweak_frame, text="mm/time"))
             self.w_list[-1].grid(row=row,column=6)
         else:
@@ -468,25 +477,50 @@ class Window():
             self.w_list.append(tk.Checkbutton(self.tweak_frame, text="With Max", variable=self.max_limit))
             self.w_list[-1].grid(row=row, column=2, columnspan=4)
             row+=1
-            self.w_list.append(tk.Label(self.tweak_frame, text="From:"))
-            self.w_list[-1].grid(row=row,column=2)
-            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3))
-            self.w_list[-1].delete(0,tk.END)
-            self.w_list[-1].insert(0,5)
-            self.w_list[-1].grid(row=row,column=3)
-            self.w_list.append(tk.Label(self.tweak_frame, text="To:"))
-            self.w_list[-1].grid(row=row,column=4)
-            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3))
-            self.w_list[-1].delete(0,tk.END)
-            self.w_list[-1].insert(0,10)
-            self.w_list[-1].grid(row=row,column=5)
+            self.create_range(row, 2, 5, 10)
 
         else:
             row+=1
-            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3))
+            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3))
             self.w_list[-1].delete(0,tk.END)
             self.w_list[-1].insert(0,8)
             self.w_list[-1].grid(row=row,column=2)
+
+    def toggle_auto_min4(self):
+        row=2
+        self.max_limit.set(0)
+        for widget in self.w_list:
+            widget.destroy()
+        self.w_list=[]
+        if self.auto_step.get():
+            self.w_list.append(tk.Checkbutton(self.tweak_frame, text="With Max", variable=self.max_limit))
+            self.w_list[-1].grid(row=row-1, column=3, columnspan=4)
+            row+=1
+            self.w_list.append(tk.Label(self.tweak_frame, text="Delta Temp:"))
+            self.w_list[-1].grid(row=row,column=1)
+            self.create_range(row, 2, 2, 15)
+        else:
+            row+=1
+            self.w_list.append(tk.Label(self.tweak_frame, text="Delta Temp:"))
+            self.w_list[-1].grid(row=row,column=1)
+            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3))
+            self.w_list[-1].delete(0,tk.END)
+            self.w_list[-1].insert(0,8)
+            self.w_list[-1].grid(row=row,column=2)
+
+    def create_range(self, row, first_column, default_min, default_max):
+        self.w_list.append(tk.Label(self.tweak_frame, text="From:"))
+        self.w_list[-1].grid(row=row,column=first_column)
+        self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3))
+        self.w_list[-1].delete(0,tk.END)
+        self.w_list[-1].insert(0,default_min)
+        self.w_list[-1].grid(row=row,column=first_column+1)
+        self.w_list.append(tk.Label(self.tweak_frame, text="To:"))
+        self.w_list[-1].grid(row=row,column=first_column+2)
+        self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=TEMP_LIMIT, justify=tk.RIGHT, width=3))
+        self.w_list[-1].delete(0,tk.END)
+        self.w_list[-1].insert(0,default_max)
+        self.w_list[-1].grid(row=row,column=first_column+3)
 
 
 
@@ -506,7 +540,7 @@ RAIN_LIMIT=100
 TEMP_LIMIT=100
 
 
-ANALYSE_TYPE = ("Data Cleaning", "Difference Time", "Rain Cumul", "Temp Average")
+ANALYSE_TYPE = ("Data Cleaning", "Difference Time", "Rain Cumul", "Temp Average", "Day To Span Average")
 
 DEFAULT_FILE_NAME="../test_file/month6.txt"
 #DEFAULT_FILE_NAME=".txt"
@@ -540,6 +574,7 @@ The typical average is calulated for each day of the year as the average of the 
 (For exemple: take the daily average of each July 20th every year and make the average of them all, that is the typical daily average)
 "Per event" implies that if two consecutive days are events, they only count as one,
 whereas "day to day" counts every day that is an event."""
+DAY_TO_SPAN_INFO="""TO COMPLETE!"""
 END_INFO="""\n\nAuto Range: automaticaly makes the analyses for all values beetween set boundaries"""
 
 #######################################################################################
