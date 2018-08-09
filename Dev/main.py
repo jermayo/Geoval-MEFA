@@ -29,19 +29,19 @@ def create_data(line, column):
                 return line[i]
         return None
 
-    try:
-        date_val=get("Year")+"-"+get("Month")+"-"+get("Day")
-        date_val+="-"+get("Hour")+"-"+get("Minutes")
-        data={"date":datetime.datetime.strptime(date_val, DATE_FORMAT)}
+    #try:
+    date_val=get("Year")+"-"+get("Month")+"-"+get("Day")
+    date_val+="-"+get("Hour")+"-"+get("Minutes")
+    data={"date":datetime.datetime.strptime(date_val, DATE_FORMAT)}
 
-        data["rain"]=eval(get("Rain"))
-        data["temp"]=eval(get("Temp"))
+    data["rain"]=eval(get("Rain"))
+    data["temp"]=eval(get("Temp"))
 
-        if abs(data["rain"])>RAIN_LIMIT or abs(data["temp"])>TEMP_LIMIT:
-            return data, False
-        return data, True
-    except:
-        messagebox.showerror("Error", "Data could not be retrieved")
+    if abs(data["rain"])>RAIN_LIMIT or abs(data["temp"])>TEMP_LIMIT:
+        return data, False
+    return data, True
+    #except:
+    #    messagebox.showerror("Error", "Data could not be retrieved")
 
 
 #File Reading and Writting
@@ -103,9 +103,9 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
                 messagebox.showwaring("Error", "No temperature or rain data detected")
         #Automatic rain and temp column detection
         elif len(line)>1 and AUTO_MODE:
-            if line[1]==RAIN_KEYWORD:
+            if line[1][0:5]==RAIN_KEYWORD[0:5]:
                 rain_col=line[0]
-            elif line[1]==TEMP_KEYWORD:
+            elif line[1][0:5]==TEMP_KEYWORD[0:5]:
                 temp_col=line[0]
 
     log="{} values with {} bad values ({:.1f}%) (taken out)".format(len(datas), bad_data, bad_data/len(datas)*100)
@@ -224,10 +224,11 @@ class Window():
         else:
             min=int(self.w_list[w_single].get())
             max=min
+            max_limit=False
         if min>max:
             messagebox.showerror("Error", "Minimal value greater than maximal.\n(You fool)")
             return False
-        return True, min, max
+        return True, min, max, max_limit
 
     def analyse(self):
 
@@ -253,25 +254,20 @@ class Window():
             delta_t=datetime.timedelta(hours=int(self.Sb_tweak2.get()))
             time_max_event=datetime.timedelta(hours=int(self.Sb_tweak3.get()))
             period=self.period.get()
-            max_limit=False
-
-            go, min, max=self.find_min_max(1, 3, 5)
+            go, min, max, max_limit=self.find_min_max(1, 3, 5)
             if go:
                 res_text+=at.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
 
         elif analyse=="Rain Cumul":
             step=int(self.Sb_tweak1.get())
             min_time_beetween_event=int(self.Sb_tweak3.get())
-
-            go, min, max=self.find_min_max(1, 2, 4)
+            go, min, max, max_limit=self.find_min_max(1, 2, 4)
             if go:
                 res_text+=at.rain_cumul(GV.datas, step, min_time_beetween_event, min, max)
 
         elif analyse=="Temp Average":
             period_type=self.period.get()
-            max_limit=False
-
-            go, min, max=self.find_min_max(0, 2, 4)
+            go, min, max, max_limit=self.find_min_max(0, 2, 4)
             if go:
                 res_text+=at.temp_average(GV.datas, period_type, min, max, max_limit)
 
@@ -279,9 +275,7 @@ class Window():
             span=int(self.Sb_tweak1.get())
             days=int(self.Sb_tweak2.get())
             analy_type=self.period.get()
-            max_limit=False
-
-            go, min, max=self.find_min_max(1, 3, 5)
+            go, min, max, max_limit=self.find_min_max(1, 3, 5)
             if go:
                 res_text+=at.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days)
 
