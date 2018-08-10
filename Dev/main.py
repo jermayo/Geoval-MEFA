@@ -255,6 +255,10 @@ class Window():
             time_max_event=datetime.timedelta(hours=int(self.Sb_tweak3.get()))
             period=self.period.get()
             go, min, max, max_limit=self.find_min_max(1, 3, 5)
+            res_text+="delta t: {}, event time max: {}, from: {}°C to: {}°C".format(delta_t, time_max_event, min, max)
+            if max_limit:
+                res_text+=" with max limit"
+            res_text+="\n"
             if go:
                 res_text+=at.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
 
@@ -268,6 +272,11 @@ class Window():
         elif analyse=="Temp Average":
             period_type=self.period.get()
             go, min, max, max_limit=self.find_min_max(0, 2, 4)
+            res_text+="from: {}°C to: {}°C".format(min, max)
+            if period_type:
+                res_text+=", per event\n"
+            else:
+                res_text+=", day to day\n"
             if go:
                 res_text+=at.temp_average(GV.datas, period_type, min, max, max_limit)
 
@@ -276,6 +285,13 @@ class Window():
             days=int(self.Sb_tweak2.get())
             analy_type=self.period.get()
             go, min, max, max_limit=self.find_min_max(1, 3, 5)
+            res_text+="span:{} days, min time beet. events:{} days,  from: {}°C to: {}°C".format(span, days, min, max)
+            if max_limit:
+                res_text+=" with max limit"
+            if analy_type:
+                res_text+=", per event\n"
+            else:
+                res_text+=", day to day\n"
             if go:
                 res_text+=at.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days)
 
@@ -536,7 +552,7 @@ TEMP_LIMIT=100
 ANALYSE_TYPE = ("Data Cleaning", "Difference Time", "Rain Cumul", "Temp Average", "Day To Span Average")
 
 #DEFAULT_FILE_NAME="../test_file/month6.txt"
-DEFAULT_FILE_NAME=".txt"
+DEFAULT_FILE_NAME=""
 
 FILE_ENCODING="ISO 8859-1"        #Encoding not same on linux and windows (fgs wondows)
 
