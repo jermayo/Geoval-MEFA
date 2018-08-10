@@ -1,10 +1,24 @@
 #!/bin/bash
+FILE=mefa_v18.x
 echo "Compiling..."
 echo ""
 pyinstaller -F main.py
 echo ""
 echo "Cleaning..."
 echo ""
-mv dist/main mefa_v18.x
+mv dist/main $FILE
 rm -r build/ __pycache__/ main.spec dist/
+echo "Done!"
+
+while true; do
+    read -p "Move and copy file ? " yn
+    case $yn in
+        [Yy]* ) break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";
+    esac
+done
+cp $FILE ../$FILE
+mv $FILE ../../$FILE
+
 echo "Done!"

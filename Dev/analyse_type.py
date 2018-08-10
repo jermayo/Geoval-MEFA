@@ -2,7 +2,7 @@ import datetime
 from collections import OrderedDict
 from calendar import month_abbr
 
-def _date_beetween(date, month_start, month_end):
+def date_beetween(date, month_start, month_end):
     if month_start>month_end:
         if not(date.month<month_start and date.month>=month_end):
             return True
@@ -56,10 +56,9 @@ def build_text(res, T_min, T_max, period_list=[""]):
                 for data in ["pos","neg","total"]:
                     text+=str(res[year][temp][data])+"\t"
             else:
-                for period in res[year][temp]:
-                    if period!="during_event":
-                        for data in ["pos","neg","total"]:
-                            text+=str(res[year][temp][period][data])+"\t"
+                for period in period_list:
+                    for data in ["pos","neg","total"]:
+                        text+=str(res[year][temp][period][data])+"\t"
     return text
 
 #######################################################################################
@@ -118,7 +117,7 @@ def diff_time(datas, delta_t, time_max_event, period, min, max, max_limit):
                     event_type="-"
 
                 for key in period_list:
-                    if _date_beetween(datas[i]["date"], period_list[key][0], period_list[key][1]):
+                    if date_beetween(datas[i]["date"], period_list[key][0], period_list[key][1]):
                         new_event={"last": datas[i]["date"], "type": event_type, "period":key, "max":abs(d_temp)}
                         break
 
@@ -256,14 +255,23 @@ def temp_average(datas, analy_type, min, max, max_limit):
 
     return build_text(events, min, max)
 
-def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event):
+def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event, period):
     events=OrderedDict()
     days=daily_average(datas)
     days_beet_event=datetime.timedelta(days=days_beet_event)
 
+    if period==1:
+        period_list={"Year":[1,13]} #period list from month# to month# NOT INCLUDED, 13 => december included
+    elif period==2:
+        period_list={"Winter":[12,3],"Spring":[3,6],"Summer":[6,9],"Autumn":[9,12]}
+    elif period==3:
+        period_list={}
+        for i in range(1,13):
+            period_list[month_abbr[i]]=[i, i+1]
+
     for day in days:
         year=day.year
-        events=check_new_year(year, events, min, max)
+        events=check_new_year(year, events, min, max, periods=period_list)
 
         average=0
         numb_of_value=0
@@ -284,14 +292,17 @@ def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event
         for min_temp in range(min, max+1):
             if abs(d_temp)>=min_temp and not events[year][min_temp]["during_event"]:
                 if not max_limit or (max_limit and abs(d_temp)<min_temp+1):
-                    if analy_type:
-                        events[year][min_temp]["during_event"]=True
-                        events[year][min_temp]["last"]=day
-                    if d_temp>0:
-                        events[year][min_temp]["pos"]+=1
-                    elif d_temp<0:
-                        events[year][min_temp]["neg"]+=1
-                    events[year][min_temp]["total"]+=1
+                    for key in period_list:
+                        if date_beetween(day, period_list[key][0], period_list[key][1]):
+                            if analy_type:
+                                events[year][min_temp]["during_event"]=True
+                                events[year][min_temp]["last"]=day
+                            if d_temp>0:
+                                events[year][min_temp][key]["pos"]+=1
+                            elif d_temp<0:
+                                events[year][min_temp][key]["neg"]+=1
+                            events[year][min_temp][key]["total"]+=1
+                            break
 
             elif events[year][min_temp]["during_event"]:
                 if day-events[year][min_temp]["last"]>days_beet_event:
@@ -299,6 +310,4 @@ def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event
                 elif abs(d_temp)>=min_temp:
                     events[year][min_temp]["last"]=day
 
-    text=build_text(events, min, max)
-
-    return text
+    return build_text(events, min, max, period_list=period_list)

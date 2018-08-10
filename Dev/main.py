@@ -29,19 +29,19 @@ def create_data(line, column):
                 return line[i]
         return None
 
-    #try:
-    date_val=get("Year")+"-"+get("Month")+"-"+get("Day")
-    date_val+="-"+get("Hour")+"-"+get("Minutes")
-    data={"date":datetime.datetime.strptime(date_val, DATE_FORMAT)}
+    try:
+        date_val=get("Year")+"-"+get("Month")+"-"+get("Day")
+        date_val+="-"+get("Hour")+"-"+get("Minutes")
+        data={"date":datetime.datetime.strptime(date_val, DATE_FORMAT)}
 
-    data["rain"]=eval(get("Rain"))
-    data["temp"]=eval(get("Temp"))
+        data["rain"]=eval(get("Rain"))
+        data["temp"]=eval(get("Temp"))
 
-    if abs(data["rain"])>RAIN_LIMIT or abs(data["temp"])>TEMP_LIMIT:
-        return data, False
-    return data, True
-    #except:
-    #    messagebox.showerror("Error", "Data could not be retrieved")
+        if abs(data["rain"])>RAIN_LIMIT or abs(data["temp"])>TEMP_LIMIT:
+            return data, False
+        return data, True
+    except:
+        messagebox.showerror("Error", "Data could not be retrieved")
 
 
 #File Reading and Writting
@@ -113,12 +113,16 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
 
 
 def file_write(file_name, res, log):
-    file=open(file_name, "w")
-    file.write("\t\t\t\t\t{}\n".format(datetime.datetime.now().strftime('%Y-%m-%d')))
-    file.write("Result of analyse of data: ")
-    file.write(log+"\n")
-    file.write(res)
-    file.close()
+    try:
+        file=open(file_name, "w")
+        file.write("\t\t\t\t\t{}\n".format(datetime.datetime.now().strftime('%Y-%m-%d')))
+        file.write("Result of analyse of data: ")
+        file.write(log+"\n")
+        file.write(res)
+        file.close()
+        return True
+    except FileNotFoundError:
+        return False
 
 #######################################################################################
 #                             GUI                                                     #
@@ -143,6 +147,8 @@ class Window():
         self.daily_av.set(0)
         self.period=tk.IntVar()
         self.period.set(1)
+        self.analy_type=tk.IntVar()
+        self.analy_type.set(1)
 
         self.w_list=[]
 
@@ -270,7 +276,7 @@ class Window():
                 res_text+=at.rain_cumul(GV.datas, step, min_time_beetween_event, min, max)
 
         elif analyse=="Temp Average":
-            period_type=self.period.get()
+            period_type=self.analy_type.get()
             go, min, max, max_limit=self.find_min_max(0, 2, 4)
             res_text+="from: {}°C to: {}°C".format(min, max)
             if period_type:
@@ -283,7 +289,8 @@ class Window():
         elif analyse=="Day To Span Average":
             span=int(self.Sb_tweak1.get())
             days=int(self.Sb_tweak2.get())
-            analy_type=self.period.get()
+            analy_type=self.analy_type.get()
+            period=self.period.get()
             go, min, max, max_limit=self.find_min_max(1, 3, 5)
             res_text+="span:{} days, min time beet. events:{} days,  from: {}°C to: {}°C".format(span, days, min, max)
             if max_limit:
@@ -293,10 +300,13 @@ class Window():
             else:
                 res_text+=", day to day\n"
             if go:
-                res_text+=at.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days)
+                res_text+=at.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days, period)
 
         if self.output_toggle.get():
-            file_write(self.E_output.get(),res_text, GV.read_log)
+            if not file_write(self.E_output.get(),res_text, GV.read_log):
+                messagebox.showerror("Error", "File not found (404)")
+                self.load_end()
+                return
             extra_text=", results in '{}'".format(self.E_output.get())
         #messagebox.showinfo("Done", "Data analysed"+extra_text)
 
@@ -371,7 +381,7 @@ class Window():
             self.L_info.config(text=RAIN_CUMUL_INFO+AUTO_RANGE_INFO)
 
         elif value=="Temp Average":
-            self.period.set(0)
+            self.analy_type.set(0)
             tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min3).grid(row=row, column=1)
             row+=1
             tk.Label(self.tweak_frame, text="Delta Temp: ").grid(row=row, column=1)
@@ -379,13 +389,14 @@ class Window():
             tk.Label(self.tweak_frame, text="°C").grid(row=row,column=6)
             row+=1
             tk.Label(self.tweak_frame, text="Type:").grid(row=row, column=1)
-            tk.Radiobutton(self.tweak_frame, var=self.period, text="Day to day", value=0).grid(row=row, column=2, sticky=tk.W, columnspan=10)
-            tk.Radiobutton(self.tweak_frame, var=self.period, text="Per event", value=1).grid(row=row+1, column=2, sticky=tk.W, columnspan=10)
+            tk.Radiobutton(self.tweak_frame, var=self.analy_type, text="Day to day", value=0).grid(row=row, column=2, sticky=tk.W, columnspan=10)
+            tk.Radiobutton(self.tweak_frame, var=self.analy_type, text="Per event", value=1).grid(row=row+1, column=2, sticky=tk.W, columnspan=10)
 
             self.L_info.config(text=TEMP_AVERAGE_INFO+AUTO_RANGE_INFO)
 
         elif value=="Day To Span Average":
-            self.period.set(0)
+            self.analy_type.set(0)
+            self.period.set(1)
             tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min4).grid(row=row, column=1,columnspan=2)
             tk.Label(self.tweak_frame, text="Type:").grid(row=row, column=9)
             row+=1
@@ -395,8 +406,8 @@ class Window():
             self.Sb_tweak1.insert(0,30)
             self.Sb_tweak1.grid(row=row,column=2)
             tk.Label(self.tweak_frame, text="Days").grid(row=row, column=3)
-            tk.Radiobutton(self.tweak_frame, var=self.period, text="Day to day", value=0).grid(row=row, column=9, sticky=tk.W)
-            tk.Radiobutton(self.tweak_frame, var=self.period, text="Per event", value=1).grid(row=row+1, column=9, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.analy_type, text="Day to day", value=0).grid(row=row, column=9, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.analy_type, text="Per event", value=1).grid(row=row+1, column=9, sticky=tk.W)
             row+=1
             self.toggle_auto_min4()
             row+=1
@@ -406,6 +417,10 @@ class Window():
             self.Sb_tweak2.insert(0,2)
             self.Sb_tweak2.grid(row=row,column=2)
             tk.Label(self.tweak_frame, text="Days").grid(row=row,column=3)
+            tk.Label(self.tweak_frame, text="Period:").grid(row=1, column=8)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="All Year", value=1).grid(row=2, column=8, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="Season", value=2).grid(row=3, column=8, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="Month", value=3).grid(row=4, column=8, sticky=tk.W)
 
             self.L_info.config(text=DAY_TO_SPAN_INFO+AUTO_RANGE_INFO+WITH_MAX_INFO)
 
