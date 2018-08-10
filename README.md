@@ -1,4 +1,4 @@
-# Geoval-MEFA
+﻿# Geoval-MEFA
 Analyse de donnee environemental pour Geoval
 Meteorological Events Frequency Analysis
 
@@ -23,7 +23,7 @@ Dossiers:
 
 
 Version:
-Dev: 1.9, Fixed: 1.8 (dernière), Exe: mefa_v18.x (Linux) mefa_v15.exe (Win)
+Dev: 1.9, Fixed: 1.8 (dernière), Exe: mefa_v18.x (Linux) mefa_v18.exe (Win)
 
 
 
