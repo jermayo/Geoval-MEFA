@@ -13,7 +13,8 @@ import datetime
 from calendar import monthrange
 from collections import OrderedDict
 
-import analyse_type as at
+import temp_analyse as ta
+import rain_analyse as ra
 
 #######################################################################################
 #                  Classes and general functions                                      #
@@ -254,7 +255,7 @@ class Window():
         extra_text=""
         if analyse=="Data Cleaning":
             if self.daily_av.get():
-                res_text=at.clean_daily_average(GV.datas)
+                res_text=ta.clean_daily_average(GV.datas)
 
             else:
                 for data in GV.datas:
@@ -272,14 +273,14 @@ class Window():
                 res_text+=" with max limit"
             res_text+="\n"
             if go:
-                res_text+=at.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
+                res_text+=ta.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
 
         elif analyse=="Rain Cumul":
-            step=int(self.Sb_tweak1.get())
+            min_rain=int(self.Sb_tweak1.get())
             min_time_beetween_event=int(self.Sb_tweak3.get())
             go, min, max, max_limit=self.find_min_max(1, 2, 4)
             if go:
-                res_text+=at.rain_cumul(GV.datas, step, min_time_beetween_event, min, max)
+                res_text+=ra.rain_cumul(GV.datas, min, max, min_time_beetween_event, min_rain)
 
         elif analyse=="Temp Average":
             period_type=self.analy_type.get()
@@ -290,7 +291,7 @@ class Window():
             else:
                 res_text+=", day to day\n"
             if go:
-                res_text+=at.temp_average(GV.datas, period_type, min, max, max_limit)
+                res_text+=ta.temp_average(GV.datas, period_type, min, max, max_limit)
 
         elif analyse=="Day To Span Average":
             span=int(self.Sb_tweak1.get())
@@ -306,7 +307,7 @@ class Window():
             else:
                 res_text+=", day to day\n"
             if go:
-                res_text+=at.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days, period)
+                res_text+=ta.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days, period)
 
         if self.output_toggle.get():
             if not file_write(self.E_output.get(),res_text, GV.read_log):
@@ -364,28 +365,6 @@ class Window():
 
             self.L_info.config(text=DIFF_TIME_INFO+AUTO_RANGE_INFO+WITH_MAX_INFO)
 
-
-        elif value=="Rain Cumul":
-            tk.Label(self.tweak_frame, text="Step:").grid(row=row,column=1)
-            self.Sb_tweak1=tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3)
-            self.Sb_tweak1.delete(0,tk.END)
-            self.Sb_tweak1.insert(0,6)
-            self.Sb_tweak1.grid(row=row,column=2)
-            tk.Label(self.tweak_frame, text="Hours").grid(row=row,column=3)
-            row+=1
-            tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min2).grid(row=row, column=1)
-            row+=1
-            self.toggle_auto_min2()
-            row+=1
-            tk.Label(self.tweak_frame, text="Min time beet. events:").grid(row=row,column=1)
-            self.Sb_tweak3=tk.Spinbox(self.tweak_frame, from_=0, to_=10000, justify=tk.RIGHT, width=3)
-            self.Sb_tweak3.delete(0,tk.END)
-            self.Sb_tweak3.insert(0,10)
-            self.Sb_tweak3.grid(row=row,column=2)
-            tk.Label(self.tweak_frame, text="Min").grid(row=row,column=3)
-
-            self.L_info.config(text=RAIN_CUMUL_INFO+AUTO_RANGE_INFO)
-
         elif value=="Temp Average":
             self.analy_type.set(0)
             tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min3).grid(row=row, column=1)
@@ -429,6 +408,31 @@ class Window():
             tk.Radiobutton(self.tweak_frame, var=self.period, text="Month", value=3).grid(row=4, column=8, sticky=tk.W)
 
             self.L_info.config(text=DAY_TO_SPAN_INFO+AUTO_RANGE_INFO+WITH_MAX_INFO)
+
+        elif value=="Rain Cumul":
+            tk.Label(self.tweak_frame, text="Step:").grid(row=row,column=1)
+            for w in self.w_list:
+                w.destroy()
+            self.w_list=[]
+
+            self.create_range(row, 2, 3, 24)
+
+
+            self.Sb_tweak1=tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3)
+            self.Sb_tweak1.delete(0,tk.END)
+            self.Sb_tweak1.insert(0,6)
+            self.Sb_tweak1.grid(row=row,column=2)
+            tk.Label(self.tweak_frame, text="Hours").grid(row=row,column=3)
+            row+=1
+            row+=1
+            tk.Label(self.tweak_frame, text="Min time beet. events:").grid(row=row,column=1)
+            self.Sb_tweak3=tk.Spinbox(self.tweak_frame, from_=0, to_=10000, justify=tk.RIGHT, width=3)
+            self.Sb_tweak3.delete(0,tk.END)
+            self.Sb_tweak3.insert(0,10)
+            self.Sb_tweak3.grid(row=row,column=2)
+            tk.Label(self.tweak_frame, text="Min").grid(row=row,column=3)
+
+            self.L_info.config(text=RAIN_CUMUL_INFO)
 
 
     def load_begin(self):
@@ -570,7 +574,7 @@ RAIN_LIMIT=100
 TEMP_LIMIT=100
 
 
-ANALYSE_TYPE = ("Data Cleaning", "Difference Time", "Rain Cumul", "Temp Average", "Day To Span Average")
+ANALYSE_TYPE = ("Data Cleaning", "Difference Time", "Temp Average", "Day To Span Average", "Rain Cumul")
 
 #DEFAULT_FILE_NAME="../test_file/month6.txt"
 DEFAULT_FILE_NAME=""
@@ -584,7 +588,7 @@ column_format=["Station", "Year", "Month", "Day", "Hour", "Minutes"]
 
 CLEANING_INFO=""" Description:
 Data Cleaning:
-Does what it says."""
+Does what it says. 'Daily Average': Daily average of the temperature and Rain Cumul"""
 DIFF_TIME_INFO="""  Description:
 Difference over time:
 Event starts if the difference beetween a value and the value recorded "Time Diff" before is greater than "Delta Temp".

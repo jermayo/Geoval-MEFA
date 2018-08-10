@@ -153,51 +153,6 @@ def diff_time(datas, delta_t, time_max_event, period, min, max, max_limit):
 
     return build_text(event_list, min, max, period_list=period_list)
 
-#######################################################################################
-########################## RAIN CUMUL #################################################
-
-def rain_cumul(datas, step, min_time_beetween_event, rain_min, rain_max):
-    def _rain_cumul(datas, step, min_rain, min_time_beetween_event):
-        last_event_date=datetime.datetime.min
-        events=[]
-        for i in range(0,len(datas)):
-            j=i
-            sum=0
-            while datas[j]["date"]-datas[i]["date"]<step:
-                j+=1
-                sum+=datas[j]["rain"]
-            if sum>min_rain:
-                if datas[j]["date"]-last_event_date>min_time_beetween_event:
-                    flag=True
-                    for event in events:
-                        if event["year"]==datas[i]["date"].year:
-                            flag=False
-                            event["total"]+=1
-                            break
-                    if flag:
-                        events.append({"year":datas[i]["date"].year, "total":1})
-                last_event_date=datas[j]["date"]
-
-            if j>=len(datas)-1:
-                break
-        return events
-
-    min_time_beetween_event=datetime.timedelta(hours=min_time_beetween_event)
-    step=datetime.timedelta(minutes=step)
-    text="Min Rain\t"
-    res_total=[]
-    for i in range(rain_min, rain_max+1):
-        res=_rain_cumul(datas, step, i, min_time_beetween_event)
-        res_total.append({"min":i, "res":res})
-
-    for i in res_total[0]["res"]:
-        text+=str(i["year"])+"\t"
-    for res in res_total:
-        text+="\n"+str(res["min"])
-        for i in res["res"]:
-            text+="\t"+str(i["total"])
-    return text
-
 
 #######################################################################################
 ######################## TEMPE AVERAGE ################################################
@@ -298,22 +253,28 @@ def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event
         d_temp=days[day]["temp"]-average
         for min_temp in range(min, max+1):
             if abs(d_temp)>=min_temp and not events[year][min_temp]["during_event"]:
-                if not max_limit or (max_limit and abs(d_temp)<min_temp+1):
-                    for key in period_list:
-                        if date_beetween(day, period_list[key][0], period_list[key][1]):
-                            if analy_type:
-                                events[year][min_temp]["during_event"]=True
-                                events[year][min_temp]["last"]=day
-                            if d_temp>0:
-                                events[year][min_temp][key]["pos"]+=1
-                            elif d_temp<0:
-                                events[year][min_temp][key]["neg"]+=1
-                            events[year][min_temp][key]["total"]+=1
-                            break
+                for key in period_list:
+                    if date_beetween(day, period_list[key][0], period_list[key][1]):
+                        if analy_type:
+                            events[year][min_temp]["during_event"]=True
+                            events[year][min_temp]["last"]=day
+                            events[year][min_temp]["max"]=d_temp
+                        break
 
             elif events[year][min_temp]["during_event"]:
+                if events[year][min_temp]["max"]<d_temp:
+                    events[year][min_temp]["max"]=d_temp
+                    
                 if day-events[year][min_temp]["last"]>days_beet_event:
                     events[year][min_temp]["during_event"]=False
+                    if not max_limit or (max_limit and abs(d_temp)<min_temp+1):
+                        if max_limit:
+                            min_temp=int(events[year][min_temp]["max"])
+                        if d_temp>0:
+                            events[year][min_temp][key]["pos"]+=1
+                        elif d_temp<0:
+                            events[year][min_temp][key]["neg"]+=1
+                        events[year][min_temp][key]["total"]+=1
                 elif abs(d_temp)>=min_temp:
                     events[year][min_temp]["last"]=day
 
