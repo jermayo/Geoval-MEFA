@@ -27,5 +27,5 @@ Dev: 1.9, Fixed: 1.8 (dernière), Exe: mefa_v18.x (Linux) mefa_v15.exe (Win)
 
 
 
-Jérémy Mayoraz pour Géoval, 7 août 2018
+Jérémy Mayoraz pour Géoval, 10 août 2018
 Pour toutes questions: jeremy.mayoraz@gmail.com
