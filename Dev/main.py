@@ -138,7 +138,7 @@ class Window():
         #Main window
         self.w=tk.Tk()
         self.w.title("Meteorological Event Frequency Analysis")
-        self.w.tk.call('wm', 'iconphoto', self.w._w, tk.PhotoImage(file='icone.png'))
+        #self.w.tk.call('wm', 'iconphoto', self.w._w, tk.PhotoImage(file='icone.png'))
         #StringVar and IntVar()
         self.analyse_type = tk.StringVar(self.w)
         self.analyse_type.set(ANALYSE_TYPE[0])
