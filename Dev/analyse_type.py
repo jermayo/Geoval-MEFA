@@ -1,3 +1,10 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+# MEFA: Meterological Event Frequency Analysis Software
+# Ver. 1.8.1
+# Jérémy Mayoraz pour GéoVal
+# Sion, Août 2018
+
 import datetime
 from collections import OrderedDict
 from calendar import month_abbr
