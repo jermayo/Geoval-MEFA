@@ -236,7 +236,7 @@ def temp_average(datas, analy_type, min, max, max_limit):
 
     for day in days_average:
         day_numb=(day-(datetime.datetime(day.year, 1, 1)).date()).days+1
-        diff=typical_average[day_numb]-days_average[day]
+        diff=days_average[day]-typical_average[day_numb]
         for temp in range(min, max+1):
             if abs(diff)>temp and not events[day.year][temp]["during_event"]:
                 if not max_limit or (max_limit and abs(diff)<temp+1):
