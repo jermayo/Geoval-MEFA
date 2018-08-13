@@ -15,6 +15,7 @@ from collections import OrderedDict
 
 import temp_analyse as ta
 import rain_analyse as ra
+import plot
 
 #######################################################################################
 #                  Classes and general functions                                      #
@@ -145,6 +146,8 @@ class Window():
         self.analyse_type.set(ANALYSE_TYPE[0])
         self.output_toggle = tk.IntVar()
         self.output_toggle.set(1)
+        self.plot_toggle = tk.IntVar()
+        self.plot_toggle.set(1)
         self.file_name="..."
         self.auto_step=tk.IntVar()
         self.auto_step.set(0)
@@ -187,14 +190,17 @@ class Window():
         for child in self.tweak_frame.winfo_children():
             child.destroy()
 
-        output_frame = tk.LabelFrame(self.w, text="Output Log File")
+        output_frame = tk.LabelFrame(self.w, text="Output")
         self.CB_output = tk.Checkbutton(output_frame, variable=self.output_toggle, text="Output file")
-        self.CB_output.grid(row=1,column=3)
-        tk.Label(output_frame, text="File Name:").grid(row=2,column=3)
+        self.CB_output.grid(row=1,column=1)
+        tk.Label(output_frame, text="File Name:").grid(row=2,column=1)
         self.E_output = tk.Entry(output_frame)
         self.E_output.insert(0,"output.txt")
-        self.E_output.grid(row=2,column=4)
+        self.E_output.grid(row=2,column=2)
+        self.CB_plot = tk.Checkbutton(output_frame, variable=self.plot_toggle, text="Plot graph")
+        self.CB_plot.grid(row=3,column=1)
         output_frame.grid(row=1,rowspan=2, column=3, stick=tk.W)
+
 
         tk.Label(self.w, text="Analyse type:").grid(row=3,column=0)
         self.analyse_type.set(ANALYSE_TYPE[0])
@@ -273,7 +279,7 @@ class Window():
                 res_text+=" with max limit"
             res_text+="\n"
             if go:
-                res_text+=ta.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
+                text, data=ta.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
 
 
         elif analyse=="Temp Average":
@@ -285,7 +291,7 @@ class Window():
             else:
                 res_text+=", day to day\n"
             if go:
-                res_text+=ta.temp_average(GV.datas, period_type, min, max, max_limit)
+                text, data=ta.temp_average(GV.datas, period_type, min, max, max_limit)
 
         elif analyse=="Day To Span Average":
             span=int(self.Sb_tweak1.get())
@@ -301,22 +307,25 @@ class Window():
             else:
                 res_text+=", day to day\n"
             if go:
-                res_text+=ta.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days, period)
+                text, data=ta.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days, period)
 
         elif analyse=="Rain Cumul":
             min_rain=int(self.w_list[4].get())
             min_time_beetween_event=int(self.w_list[5].get())
             go, min, max, max_limit=self.find_min_max(None, 1, 3)
             if go:
-                res_text+=ra.rain_cumul(GV.datas, min, max, min_time_beetween_event, min_rain)
+                text, data=ra.rain_cumul(GV.datas, min, max, min_time_beetween_event, min_rain)
 
+        res_text+=text
         if self.output_toggle.get():
             if not file_write(self.E_output.get(),res_text, GV.read_log):
                 messagebox.showerror("Error", "File not found (404)")
                 self.load_end()
                 return
             extra_text=", results in '{}'".format(self.E_output.get())
-        #messagebox.showinfo("Done", "Data analysed"+extra_text)
+
+        if self.plot_toggle.get():
+            plot.plot_depth4(data)
 
         self.L_anayse.config(text="")
         if len(res_text)>1000:

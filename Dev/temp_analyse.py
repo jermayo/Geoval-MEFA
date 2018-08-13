@@ -120,11 +120,11 @@ def check_event_last(events, max_limit):
 ########################## Clean Daily Average ########################################
 def clean_daily_average(datas):
     days=daily_average(datas)
-    res_text="Day\t\tTemp\tRain\n"
+    text="Day\t\tTemp\tRain\n"
     for day in days:
-        res_text+="{}\t{:.3f}\t{:.3f}\n".format(day,days[day]["temp"],days[day]["rain"])
+        text+="{}\t{:.3f}\t{:.3f}\n".format(day,days[day]["temp"],days[day]["rain"])
 
-    return res_text
+    return text
 
 
 #######################################################################################
@@ -159,7 +159,7 @@ def diff_time(datas, delta_t, time_max_event, period, min, max, max_limit):
 
     event_list=check_event_last(event_list, max_limit)
 
-    return build_text(event_list, min, max, period_list=period_list)
+    return build_text(event_list, min, max, period_list=period_list), event_list
 
 
 #######################################################################################
@@ -233,7 +233,7 @@ def temp_average(datas, analy_type, min, max, max_limit):
                             events[day.year][temp]["total"]+=1
 
 
-    return build_text(events, min, max)
+    return build_text(events, min, max), events
 
 def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event, period):
     events=OrderedDict()
@@ -272,4 +272,4 @@ def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event
 
     events=check_event_last(events, max_limit)
 
-    return build_text(events, min, max, period_list=period_list)
+    return build_text(events, min, max, period_list=period_list), events

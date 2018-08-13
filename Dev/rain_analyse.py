@@ -66,4 +66,4 @@ def rain_cumul(datas, min_step, max_step, min_time_beetween_event, min_rain):
         for date in events[year]:
             text+="\t"+str(events[year][date]["total"])
 
-    return text
+    return text, events
