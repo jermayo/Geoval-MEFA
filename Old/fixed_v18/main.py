@@ -1,5 +1,11 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
+# MEFA: Meterological Event Frequency Analysis Software
+# Ver. 1.8.1
+# Jérémy Mayoraz pour GéoVal
+# Sion, Août 2018
+
+
 
 import tkinter as tk
 from tkinter import messagebox
@@ -7,7 +13,8 @@ import datetime
 from calendar import monthrange
 from collections import OrderedDict
 
-import analyse_type as at
+import temp_analyse as ta
+import rain_analyse as ra
 
 #######################################################################################
 #                  Classes and general functions                                      #
@@ -103,9 +110,9 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
                 messagebox.showwaring("Error", "No temperature or rain data detected")
         #Automatic rain and temp column detection
         elif len(line)>1 and AUTO_MODE:
-            if line[1]==RAIN_KEYWORD:
+            if line[1][0:5]==RAIN_KEYWORD[0:5]:
                 rain_col=line[0]
-            elif line[1]==TEMP_KEYWORD:
+            elif line[1][0:5]==TEMP_KEYWORD[0:5]:
                 temp_col=line[0]
 
     log="{} values with {} bad values ({:.1f}%) (taken out)".format(len(datas), bad_data, bad_data/len(datas)*100)
@@ -113,12 +120,16 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
 
 
 def file_write(file_name, res, log):
-    file=open(file_name, "w")
-    file.write("\t\t\t\t\t{}\n".format(datetime.datetime.now().strftime('%Y-%m-%d')))
-    file.write("Result of analyse of data: ")
-    file.write(log+"\n")
-    file.write(res)
-    file.close()
+    try:
+        file=open(file_name, "w")
+        file.write("\t\t\t\t\t{}\n".format(datetime.datetime.now().strftime('%Y-%m-%d')))
+        file.write("Result of analyse of data: ")
+        file.write(log+"\n")
+        file.write(res)
+        file.close()
+        return True
+    except FileNotFoundError:
+        return False
 
 #######################################################################################
 #                             GUI                                                     #
@@ -128,7 +139,7 @@ class Window():
         #Main window
         self.w=tk.Tk()
         self.w.title("Meteorological Event Frequency Analysis")
-        self.w.tk.call('wm', 'iconphoto', self.w._w, tk.PhotoImage(file='icone.png'))
+        #self.w.tk.call('wm', 'iconphoto', self.w._w, tk.PhotoImage(file='icone.png'))
         #StringVar and IntVar()
         self.analyse_type = tk.StringVar(self.w)
         self.analyse_type.set(ANALYSE_TYPE[0])
@@ -143,6 +154,8 @@ class Window():
         self.daily_av.set(0)
         self.period=tk.IntVar()
         self.period.set(1)
+        self.analy_type=tk.IntVar()
+        self.analy_type.set(1)
 
         self.w_list=[]
 
@@ -224,10 +237,11 @@ class Window():
         else:
             min=int(self.w_list[w_single].get())
             max=min
+            max_limit=False
         if min>max:
             messagebox.showerror("Error", "Minimal value greater than maximal.\n(You fool)")
             return False
-        return True, min, max
+        return True, min, max, max_limit
 
     def analyse(self):
 
@@ -241,7 +255,7 @@ class Window():
         extra_text=""
         if analyse=="Data Cleaning":
             if self.daily_av.get():
-                res_text=at.clean_daily_average(GV.datas)
+                res_text=ta.clean_daily_average(GV.datas)
 
             else:
                 for data in GV.datas:
@@ -253,40 +267,54 @@ class Window():
             delta_t=datetime.timedelta(hours=int(self.Sb_tweak2.get()))
             time_max_event=datetime.timedelta(hours=int(self.Sb_tweak3.get()))
             period=self.period.get()
-            max_limit=False
-
-            go, min, max=self.find_min_max(1, 3, 5)
+            go, min, max, max_limit=self.find_min_max(1, 3, 5)
+            res_text+="delta t: {}, event time max: {}, from: {}°C to: {}°C".format(delta_t, time_max_event, min, max)
+            if max_limit:
+                res_text+=" with max limit"
+            res_text+="\n"
             if go:
-                res_text+=at.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
+                res_text+=ta.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
 
-        elif analyse=="Rain Cumul":
-            step=int(self.Sb_tweak1.get())
-            min_time_beetween_event=int(self.Sb_tweak3.get())
-
-            go, min, max=self.find_min_max(1, 2, 4)
-            if go:
-                res_text+=at.rain_cumul(GV.datas, step, min_time_beetween_event, min, max)
 
         elif analyse=="Temp Average":
-            period_type=self.period.get()
-            max_limit=False
-
-            go, min, max=self.find_min_max(0, 2, 4)
+            period_type=self.analy_type.get()
+            go, min, max, max_limit=self.find_min_max(0, 2, 4)
+            res_text+="from: {}°C to: {}°C".format(min, max)
+            if period_type:
+                res_text+=", per event\n"
+            else:
+                res_text+=", day to day\n"
             if go:
-                res_text+=at.temp_average(GV.datas, period_type, min, max, max_limit)
+                res_text+=ta.temp_average(GV.datas, period_type, min, max, max_limit)
 
         elif analyse=="Day To Span Average":
             span=int(self.Sb_tweak1.get())
             days=int(self.Sb_tweak2.get())
-            analy_type=self.period.get()
-            max_limit=False
-
-            go, min, max=self.find_min_max(1, 3, 5)
+            analy_type=self.analy_type.get()
+            period=self.period.get()
+            go, min, max, max_limit=self.find_min_max(1, 3, 5)
+            res_text+="span:{} days, min time beet. events:{} days,  from: {}°C to: {}°C".format(span, days, min, max)
+            if max_limit:
+                res_text+=" with max limit"
+            if analy_type:
+                res_text+=", per event\n"
+            else:
+                res_text+=", day to day\n"
             if go:
-                res_text+=at.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days)
+                res_text+=ta.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days, period)
+
+        elif analyse=="Rain Cumul":
+            min_rain=int(self.w_list[4].get())
+            min_time_beetween_event=int(self.w_list[5].get())
+            go, min, max, max_limit=self.find_min_max(None, 1, 3)
+            if go:
+                res_text+=ra.rain_cumul(GV.datas, min, max, min_time_beetween_event, min_rain)
 
         if self.output_toggle.get():
-            file_write(self.E_output.get(),res_text, GV.read_log)
+            if not file_write(self.E_output.get(),res_text, GV.read_log):
+                messagebox.showerror("Error", "File not found (404)")
+                self.load_end()
+                return
             extra_text=", results in '{}'".format(self.E_output.get())
         #messagebox.showinfo("Done", "Data analysed"+extra_text)
 
@@ -338,30 +366,8 @@ class Window():
 
             self.L_info.config(text=DIFF_TIME_INFO+AUTO_RANGE_INFO+WITH_MAX_INFO)
 
-
-        elif value=="Rain Cumul":
-            tk.Label(self.tweak_frame, text="Step:").grid(row=row,column=1)
-            self.Sb_tweak1=tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3)
-            self.Sb_tweak1.delete(0,tk.END)
-            self.Sb_tweak1.insert(0,6)
-            self.Sb_tweak1.grid(row=row,column=2)
-            tk.Label(self.tweak_frame, text="Hours").grid(row=row,column=3)
-            row+=1
-            tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min2).grid(row=row, column=1)
-            row+=1
-            self.toggle_auto_min2()
-            row+=1
-            tk.Label(self.tweak_frame, text="Min time beet. events:").grid(row=row,column=1)
-            self.Sb_tweak3=tk.Spinbox(self.tweak_frame, from_=0, to_=10000, justify=tk.RIGHT, width=3)
-            self.Sb_tweak3.delete(0,tk.END)
-            self.Sb_tweak3.insert(0,10)
-            self.Sb_tweak3.grid(row=row,column=2)
-            tk.Label(self.tweak_frame, text="Min").grid(row=row,column=3)
-
-            self.L_info.config(text=RAIN_CUMUL_INFO+AUTO_RANGE_INFO)
-
         elif value=="Temp Average":
-            self.period.set(0)
+            self.analy_type.set(0)
             tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min3).grid(row=row, column=1)
             row+=1
             tk.Label(self.tweak_frame, text="Delta Temp: ").grid(row=row, column=1)
@@ -369,13 +375,14 @@ class Window():
             tk.Label(self.tweak_frame, text="°C").grid(row=row,column=6)
             row+=1
             tk.Label(self.tweak_frame, text="Type:").grid(row=row, column=1)
-            tk.Radiobutton(self.tweak_frame, var=self.period, text="Day to day", value=0).grid(row=row, column=2, sticky=tk.W, columnspan=10)
-            tk.Radiobutton(self.tweak_frame, var=self.period, text="Per event", value=1).grid(row=row+1, column=2, sticky=tk.W, columnspan=10)
+            tk.Radiobutton(self.tweak_frame, var=self.analy_type, text="Day to day", value=0).grid(row=row, column=2, sticky=tk.W, columnspan=10)
+            tk.Radiobutton(self.tweak_frame, var=self.analy_type, text="Per event", value=1).grid(row=row+1, column=2, sticky=tk.W, columnspan=10)
 
             self.L_info.config(text=TEMP_AVERAGE_INFO+AUTO_RANGE_INFO)
 
         elif value=="Day To Span Average":
-            self.period.set(0)
+            self.analy_type.set(0)
+            self.period.set(1)
             tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min4).grid(row=row, column=1,columnspan=2)
             tk.Label(self.tweak_frame, text="Type:").grid(row=row, column=9)
             row+=1
@@ -385,8 +392,8 @@ class Window():
             self.Sb_tweak1.insert(0,30)
             self.Sb_tweak1.grid(row=row,column=2)
             tk.Label(self.tweak_frame, text="Days").grid(row=row, column=3)
-            tk.Radiobutton(self.tweak_frame, var=self.period, text="Day to day", value=0).grid(row=row, column=9, sticky=tk.W)
-            tk.Radiobutton(self.tweak_frame, var=self.period, text="Per event", value=1).grid(row=row+1, column=9, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.analy_type, text="Day to day", value=0).grid(row=row, column=9, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.analy_type, text="Per event", value=1).grid(row=row+1, column=9, sticky=tk.W)
             row+=1
             self.toggle_auto_min4()
             row+=1
@@ -396,8 +403,37 @@ class Window():
             self.Sb_tweak2.insert(0,2)
             self.Sb_tweak2.grid(row=row,column=2)
             tk.Label(self.tweak_frame, text="Days").grid(row=row,column=3)
+            tk.Label(self.tweak_frame, text="Period:").grid(row=1, column=8)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="All Year", value=1).grid(row=2, column=8, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="Season", value=2).grid(row=3, column=8, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="Month", value=3).grid(row=4, column=8, sticky=tk.W)
 
             self.L_info.config(text=DAY_TO_SPAN_INFO+AUTO_RANGE_INFO+WITH_MAX_INFO)
+
+        elif value=="Rain Cumul":
+            tk.Label(self.tweak_frame, text="Step:").grid(row=row,column=1)
+            for w in self.w_list:
+                w.destroy()
+            self.w_list=[]
+
+            self.auto_step.set(1)
+            self.create_range(row, 2, 3, 24)
+            row+=1
+            tk.Label(self.tweak_frame, text="Min Rain: ").grid(row=row,column=1)
+            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3))
+            self.w_list[-1].delete(0,tk.END)
+            self.w_list[-1].insert(0,6)
+            self.w_list[-1].grid(row=row,column=2)
+            tk.Label(self.tweak_frame, text="mm/time").grid(row=row,column=3)
+            row+=1
+            tk.Label(self.tweak_frame, text="Min time beet. events:").grid(row=row,column=1)
+            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=10000, justify=tk.RIGHT, width=3))
+            self.w_list[-1].delete(0,tk.END)
+            self.w_list[-1].insert(0,15)
+            self.w_list[-1].grid(row=row,column=2)
+            tk.Label(self.tweak_frame, text="Min").grid(row=row,column=3)
+
+            self.L_info.config(text=RAIN_CUMUL_INFO)
 
 
     def load_begin(self):
@@ -539,10 +575,10 @@ RAIN_LIMIT=100
 TEMP_LIMIT=100
 
 
-ANALYSE_TYPE = ("Data Cleaning", "Difference Time", "Rain Cumul", "Temp Average", "Day To Span Average")
+ANALYSE_TYPE = ("Data Cleaning", "Difference Time", "Temp Average", "Day To Span Average", "Rain Cumul")
 
-#DEFAULT_FILE_NAME="../test_file/month6.txt"
-DEFAULT_FILE_NAME=".txt"
+DEFAULT_FILE_NAME="../test_file/month6.txt"
+#DEFAULT_FILE_NAME=""
 
 FILE_ENCODING="ISO 8859-1"        #Encoding not same on linux and windows (fgs wondows)
 
@@ -553,7 +589,7 @@ column_format=["Station", "Year", "Month", "Day", "Hour", "Minutes"]
 
 CLEANING_INFO=""" Description:
 Data Cleaning:
-Does what it says."""
+Does what it says. 'Daily Average': Daily average of the temperature and Rain Cumul"""
 DIFF_TIME_INFO="""  Description:
 Difference over time:
 Event starts if the difference beetween a value and the value recorded "Time Diff" before is greater than "Delta Temp".
