@@ -16,9 +16,9 @@ import tkinter as tk
 
 #print(hello)
 
-test={"un":1, "deux":2, "trois":3}
-test2={"un2":1, "deux2":2, "trois2":3}
-tot={"test":test, "test2":test2}
+# test={"un":1, "deux":2, "trois":3}
+# test2={"un2":1, "deux2":2, "trois2":3}
+# tot={"test":test, "test2":test2}
 #
 # print(list(tot[list(tot.keys())[0]].keys())[0])
 #
@@ -28,6 +28,17 @@ tot={"test":test, "test2":test2}
 #
 # print(datetime.datetime.date(period_end))
 # print(period_end.date())
+#
+#
+# print(text)
 
+# for i in range(10):
+#     print(i)
+#     i=i+1
+#     print(i)
 
-print(text)
+start=datetime.datetime.strptime("01-03-2010","%d-%m-%Y")
+end=datetime.datetime.strptime("01-03-2011","%d-%m-%Y")
+
+print(end-start)
+print((-1)*(start-end))

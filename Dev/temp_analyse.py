@@ -25,7 +25,7 @@ def check_new_year(year, events, min, max, periods=False):
             if periods:
                 for key in periods:
                     new_max[key]={"pos":0, "neg":0, "total":0}
-                new_max["during_event"]=False
+                new_max["new_event"]=False
             else:
                 new_max={"pos":0, "neg":0, "total":0, "during_event":False}
             new_period[temp]=new_max
@@ -68,6 +68,54 @@ def build_text(res, T_min, T_max, period_list=[""]):
                         text+=str(res[year][temp][period][data])+"\t"
     return text
 
+
+def check_event(event_year, d_temp, period_list, date, time_max_event, max_limit, per_event):
+    for temp in event_year:
+        new_event=False
+        case=event_year[temp]
+        if not case["new_event"] and abs(d_temp)>=temp:
+            for key in period_list:
+                if date_beetween(date, period_list[key][0], period_list[key][1]):
+                    case["new_event"]={"last": date, "period":key, "max":d_temp}
+                    if not per_event:
+                        new_event=key
+                    break
+
+        if case["new_event"] or new_event:
+            if abs(d_temp)>abs(case["new_event"]["max"]):
+                case["new_event"]["max"]=d_temp
+            if abs(d_temp)>=temp:
+                case["new_event"]["last"]=date
+
+            if new_event or date-case["new_event"]["last"]>=time_max_event:
+                if not max_limit or int(abs(case["new_event"]["max"]))<temp+1:
+                    if not new_event:
+                        new_event=case["new_event"]["period"]
+                    if case["new_event"]["max"]>0:
+                        event_year[temp][new_event]["pos"]+=1
+                    else:
+                        event_year[temp][new_event]["neg"]+=1
+                    event_year[temp][new_event]["total"]+=1
+
+                case["new_event"]=False
+    return event_year
+
+def check_event_last(events, max_limit):
+    for year in events:
+        for temp in events[year]:
+            case=events[year][temp]
+            if case["new_event"]:
+                if not max_limit or abs(case["new_event"]["max"])<temp+1:
+                    period=case["new_event"]["period"]
+                    if case["new_event"]["max"]>0:
+                        case[period]["pos"]+=1
+                    else:
+                        case[period]["neg"]+=1
+                    case[period]["total"]+=1
+            case.pop("new_event", None)
+
+    return events
+
 #######################################################################################
 ########################## Clean Daily Average ########################################
 def clean_daily_average(datas):
@@ -84,17 +132,6 @@ def clean_daily_average(datas):
 #Difference of temp with hours before
 def diff_time(datas, delta_t, time_max_event, period, min, max, max_limit):
     #month_start and month end of type int, month_end NOT included, 13 means decembre included
-    def add_event(events, new_event, temp):
-        year=new_event["last"].year
-        period=new_event["period"]
-        if new_event["type"]=="+":
-            events[year][temp][period]["pos"]+=1
-        elif new_event["type"]=="-":
-            events[year][temp][period]["neg"]+=1
-        events[year][temp][period]["total"]+=1
-
-        return events
-
     if period==1:
         period_list={"Year":[1,13]} #period list from month# to month# NOT INCLUDED, 13 => december included
     elif period==2:
@@ -115,41 +152,12 @@ def diff_time(datas, delta_t, time_max_event, period, min, max, max_limit):
             j+=1
 
         d_temp=datas[j]["temp"]-datas[i]["temp"]
-        for temp in event_list[year]:
-            case=event_list[year][temp]
-            if not case["during_event"] and abs(d_temp)>=temp:
-                case["during_event"]=True
-                event_type="+"
-                if d_temp<0:
-                    event_type="-"
-
-                for key in period_list:
-                    if date_beetween(datas[i]["date"], period_list[key][0], period_list[key][1]):
-                        new_event={"last": datas[i]["date"], "type": event_type, "period":key, "max":abs(d_temp)}
-                        break
-
-            elif case["during_event"]:
-                if abs(d_temp)>new_event["max"]:
-                    new_event["max"]=abs(d_temp)
-
-                if d_temp>=min:
-                    new_event["last"]=datas[i]["date"]
-
-                elif datas[i]["date"]-new_event["last"]>time_max_event:
-                    case["during_event"]=False
-                    if (max_limit and new_event["max"]<temp+1) or not max_limit:
-                        event_list=add_event(event_list, new_event, temp)
+        event_list[year]=check_event(event_list[year], d_temp, period_list, datas[i]["date"], time_max_event, max_limit, True)
 
         if j>=len(datas)-1:
             break
 
-    for temp in event_list[year]:
-        case=event_list[year][temp]
-        if case["during_event"]:
-            if abs(d_temp)>new_event["max"]:
-                new_event["max"]=abs(d_temp)
-            if (max_limit and new_event["max"]<temp+1) or not max_limit:
-                event_list=add_event(event_list, new_event, temp)
+    event_list=check_event_last(event_list, max_limit)
 
     return build_text(event_list, min, max, period_list=period_list)
 
@@ -186,7 +194,6 @@ def temp_average(datas, analy_type, min, max, max_limit):
     for day in typical_average:
         if typical_average[day]["numb_of_val"]>0:
             typical_average[day]=typical_average[day]["val"]/typical_average[day]["numb_of_val"]
-            #print(day,typical_average[day])
         else:
             typical_average[day]=0
     for day in days_average:
@@ -200,19 +207,30 @@ def temp_average(datas, analy_type, min, max, max_limit):
         day_numb=(day-(datetime.datetime(day.year, 1, 1)).date()).days+1
         diff=days_average[day]-typical_average[day_numb]
         for temp in range(min, max+1):
-            if abs(diff)>temp and not events[day.year][temp]["during_event"]:
-                if not max_limit or (max_limit and abs(diff)<temp+1):
+            if abs(diff)>=temp and not events[day.year][temp]["during_event"]:
+                events[day.year][temp]["max"]=abs(diff)
+                if analy_type:
+                    events[day.year][temp]["during_event"]=True
+                else:
                     if diff>0:
                         events[day.year][temp]["pos"]+=1
                     else:
                         events[day.year][temp]["neg"]+=1
                     events[day.year][temp]["total"]+=1
 
-                if analy_type:
-                    events[day.year][temp]["during_event"]=True
+            elif events[day.year][temp]["during_event"]:
+                if events[day.year][temp]["max"]>abs(diff):
+                    events[day.year][temp]["max"]=abs(diff)
 
-            elif events[day.year][temp]["during_event"] and abs(diff)<temp:
-                events[day.year][temp]["during_event"]=False
+                if abs(diff)<temp:
+                    events[day.year][temp]["during_event"]=False
+                    if temp in events[day.year]:
+                        if not max_limit or int(abs(case["new_event"]["max"])<temp+1):
+                            if diff>0:
+                                events[day.year][temp]["pos"]+=1
+                            else:
+                                events[day.year][temp]["neg"]+=1
+                            events[day.year][temp]["total"]+=1
 
 
     return build_text(events, min, max)
@@ -235,8 +253,8 @@ def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event
         year=day.year
         events=check_new_year(year, events, min, max, periods=period_list)
 
-        average=0
-        numb_of_value=0
+        average=days[day]["temp"]
+        numb_of_value=1
 
         for i in range(1, span): #span in days
             day_before=day-datetime.timedelta(days=i)
@@ -249,33 +267,9 @@ def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event
                 numb_of_value+=1
 
         average=average/numb_of_value
-
         d_temp=days[day]["temp"]-average
-        for min_temp in range(min, max+1):
-            if abs(d_temp)>=min_temp and not events[year][min_temp]["during_event"]:
-                for key in period_list:
-                    if date_beetween(day, period_list[key][0], period_list[key][1]):
-                        if analy_type:
-                            events[year][min_temp]["during_event"]=True
-                            events[year][min_temp]["last"]=day
-                            events[year][min_temp]["max"]=d_temp
-                        break
+        events[year]=check_event(events[year], d_temp, period_list, day, days_beet_event, max_limit, analy_type)
 
-            elif events[year][min_temp]["during_event"]:
-                if events[year][min_temp]["max"]<d_temp:
-                    events[year][min_temp]["max"]=d_temp
-                    
-                if day-events[year][min_temp]["last"]>days_beet_event:
-                    events[year][min_temp]["during_event"]=False
-                    if not max_limit or (max_limit and abs(d_temp)<min_temp+1):
-                        if max_limit:
-                            min_temp=int(events[year][min_temp]["max"])
-                        if d_temp>0:
-                            events[year][min_temp][key]["pos"]+=1
-                        elif d_temp<0:
-                            events[year][min_temp][key]["neg"]+=1
-                        events[year][min_temp][key]["total"]+=1
-                elif abs(d_temp)>=min_temp:
-                    events[year][min_temp]["last"]=day
+    events=check_event_last(events, max_limit)
 
     return build_text(events, min, max, period_list=period_list)

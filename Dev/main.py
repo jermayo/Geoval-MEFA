@@ -275,12 +275,6 @@ class Window():
             if go:
                 res_text+=ta.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
 
-        elif analyse=="Rain Cumul":
-            min_rain=int(self.Sb_tweak1.get())
-            min_time_beetween_event=int(self.Sb_tweak3.get())
-            go, min, max, max_limit=self.find_min_max(1, 2, 4)
-            if go:
-                res_text+=ra.rain_cumul(GV.datas, min, max, min_time_beetween_event, min_rain)
 
         elif analyse=="Temp Average":
             period_type=self.analy_type.get()
@@ -308,6 +302,13 @@ class Window():
                 res_text+=", day to day\n"
             if go:
                 res_text+=ta.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days, period)
+
+        elif analyse=="Rain Cumul":
+            min_rain=int(self.w_list[4].get())
+            min_time_beetween_event=int(self.w_list[5].get())
+            go, min, max, max_limit=self.find_min_max(None, 1, 3)
+            if go:
+                res_text+=ra.rain_cumul(GV.datas, min, max, min_time_beetween_event, min_rain)
 
         if self.output_toggle.get():
             if not file_write(self.E_output.get(),res_text, GV.read_log):
@@ -415,21 +416,21 @@ class Window():
                 w.destroy()
             self.w_list=[]
 
+            self.auto_step.set(1)
             self.create_range(row, 2, 3, 24)
-
-
-            self.Sb_tweak1=tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3)
-            self.Sb_tweak1.delete(0,tk.END)
-            self.Sb_tweak1.insert(0,6)
-            self.Sb_tweak1.grid(row=row,column=2)
-            tk.Label(self.tweak_frame, text="Hours").grid(row=row,column=3)
             row+=1
+            tk.Label(self.tweak_frame, text="Min Rain: ").grid(row=row,column=1)
+            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3))
+            self.w_list[-1].delete(0,tk.END)
+            self.w_list[-1].insert(0,6)
+            self.w_list[-1].grid(row=row,column=2)
+            tk.Label(self.tweak_frame, text="mm/time").grid(row=row,column=3)
             row+=1
             tk.Label(self.tweak_frame, text="Min time beet. events:").grid(row=row,column=1)
-            self.Sb_tweak3=tk.Spinbox(self.tweak_frame, from_=0, to_=10000, justify=tk.RIGHT, width=3)
-            self.Sb_tweak3.delete(0,tk.END)
-            self.Sb_tweak3.insert(0,10)
-            self.Sb_tweak3.grid(row=row,column=2)
+            self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=10000, justify=tk.RIGHT, width=3))
+            self.w_list[-1].delete(0,tk.END)
+            self.w_list[-1].insert(0,15)
+            self.w_list[-1].grid(row=row,column=2)
             tk.Label(self.tweak_frame, text="Min").grid(row=row,column=3)
 
             self.L_info.config(text=RAIN_CUMUL_INFO)
@@ -576,8 +577,8 @@ TEMP_LIMIT=100
 
 ANALYSE_TYPE = ("Data Cleaning", "Difference Time", "Temp Average", "Day To Span Average", "Rain Cumul")
 
-#DEFAULT_FILE_NAME="../test_file/month6.txt"
-DEFAULT_FILE_NAME=""
+DEFAULT_FILE_NAME="../test_file/month6.txt"
+#DEFAULT_FILE_NAME=""
 
 FILE_ENCODING="ISO 8859-1"        #Encoding not same on linux and windows (fgs wondows)
 

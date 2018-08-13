@@ -13,57 +13,57 @@ from collections import OrderedDict
 #######################################################################################
 ########################## RAIN CUMUL #################################################
 
-def rain_cumul(datas, step_min, step_max, min_time_beetween_event, min_rain):
+def rain_cumul(datas, min_step, max_step, min_time_beetween_event, min_rain):
 
-    min_time_beetween_event=datetime.timedelta(hours=min_time_beetween_event)
+    min_time_beetween_event=datetime.timedelta(minutes=min_time_beetween_event)
     min_step=datetime.timedelta(hours=min_step)
     max_step=datetime.timedelta(hours=max_step)
 
     step=datetime.timedelta(hours=1)
     events=OrderedDict()
     first_date=datetime.datetime.max
-    for data in datas:
-        year=data["date"].year
+    for i in range(len(datas)):
+        year=datas[i]["date"].year
         if year not in events:
             events[year]=OrderedDict()
             add_year=True
 
-        if data["date"]<first_date:
-            first_date=data["date"]
+        if datas[i]["date"]<first_date:
+            first_date=datas[i]["date"]
 
         dt=min_step
         while dt<=max_step:
             if add_year:
-                events[year][dt]={"total":0, "during_event"=False}
+                events[year][dt]={"total":0, "during_event":False}
 
             cumul=0
-            date=data["date"]
-            while date>=first_date and data["date"]-date>dt:
-                cumul+=data["rain"]
-                date-=step
-
+            j=i
+            while datas[j]["date"]>first_date and datas[i]["date"]-datas[j]["date"]<dt:
+                cumul+=datas[j]["rain"]
+                j-=1
             if cumul>=min_rain and not events[year][dt]["during_event"]:
                 events[year][dt]["total"]+=1
-                events[year][dt]["last"]=data["date"]
+                events[year][dt]["last"]=datas[i]["date"]
                 events[year][dt]["during_event"]=True
 
             elif events[year][dt]["during_event"]:
                 if cumul<min_rain:
-                    if data["date"]-events[year][dt]["last"]>min_time_beetween_event:
+                    if datas[i]["date"]-events[year][dt]["last"]>min_time_beetween_event:
                         events[year][dt]["during_event"]=False
                 elif cumul>=min_rain:
-                    events[year][dt]["last"]=data["date"]
+                    events[year][dt]["last"]=datas[i]["date"]
             dt+=step
         add_year=False
 
-    text="Time Span:"
+
+    text="Time Span: (Hours)\t"
     for year in events:
-        if not first:
-            text+="\n"+str(year)
         for date in events[year]:
-            if first:
-                text+=date+"\t"
-            else:
-                text+=events[year][date]+"\t"
-            
+            text+=str(date.total_seconds()//3600)+"\t"
+        break
+    for year in events:
+        text+="\n"+str(year)+"\t"
+        for date in events[year]:
+            text+="\t"+str(events[year][date]["total"])
+
     return text
