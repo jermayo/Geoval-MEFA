@@ -258,7 +258,6 @@ class Window():
         self.load_begin()
 
         res_text=analyse+"\n"
-        extra_text=""
         if analyse=="Data Cleaning":
             if self.daily_av.get():
                 res_text=ta.clean_daily_average(GV.datas)
@@ -322,10 +321,6 @@ class Window():
                 messagebox.showerror("Error", "File not found (404)")
                 self.load_end()
                 return
-            extra_text=", results in '{}'".format(self.E_output.get())
-
-        if self.plot_toggle.get():
-            plot.plot_depth4(data)
 
         self.L_anayse.config(text="")
         if len(res_text)>1000:
@@ -335,6 +330,9 @@ class Window():
         self.result_frame.grid()
 
         self.load_end()
+
+        if self.plot_toggle.get():
+            plot.plot_depth4(data)
 
     def change_analyse(self, value):
         for child in self.tweak_frame.winfo_children():

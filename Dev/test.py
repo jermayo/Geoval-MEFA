@@ -1,5 +1,7 @@
 import datetime
 import tkinter as tk
+import plot
+import random
 
 # l1=[i for i in range(0,5)]
 # l2=[i for i in range(5,10)]
@@ -37,8 +39,21 @@ import tkinter as tk
 #     i=i+1
 #     print(i)
 
-start=datetime.datetime.strptime("01-03-2010","%d-%m-%Y")
-end=datetime.datetime.strptime("01-03-2011","%d-%m-%Y")
+# start=datetime.datetime.strptime("01-03-2010","%d-%m-%Y")
+# end=datetime.datetime.strptime("01-03-2011","%d-%m-%Y")
+#
+# print(end-start)
+# print((-1)*(start-end))
 
-print(end-start)
-print((-1)*(start-end))
+
+data={}
+
+for year in range(2000, 2003):
+    data[year]={}
+    for limit in range(5,7):
+        data[year][limit]={}
+        for period in ["A","B","C"]:
+            data[year][limit][period]={}
+            for elem in ["pos","neg","tot"]:
+                data[year][limit][period][elem]=random.random()
+plot.plot_depth4(data)
