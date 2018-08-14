@@ -23,7 +23,7 @@ Dossiers:
 
 
 Version:
-Dev: 1.8.2, Fixed: 1.8.2 (dernière), Exe: Linux: 1.8.2 mefa_v18.x, Windows: 1.8.0 mefa_v18.exe
+Dev: 1.9.1, Fixed: 1.9.0 (dernière), Exe: Linux: 1.9.0 mefa_v18.x, Windows: 1.8.0 mefa_v18.exe
 
 
 

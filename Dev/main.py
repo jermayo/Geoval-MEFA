@@ -30,26 +30,29 @@ class GlobalVariables():
 
 #Creation of data from input, returns a list of the datas (dictionnary)
 #and if the data is good (True) not (False)
-def create_data(line, column):
+def create_data(line, column, complete_date):
     def get(elem):
         for i in range(0,len(column)):
             if column[i]["val"]==elem:
                 return line[i]
         return None
 
-    try:
+    #try:
+    if complete_date:
+        date_val=get("Date")
+    else:
         date_val=get("Year")+"-"+get("Month")+"-"+get("Day")
         date_val+="-"+get("Hour")+"-"+get("Minutes")
-        data={"date":datetime.datetime.strptime(date_val, DATE_FORMAT)}
+    data={"date":datetime.datetime.strptime(date_val, DATE_FORMAT)}
 
-        data["rain"]=eval(get("Rain"))
-        data["temp"]=eval(get("Temp"))
+    data["rain"]=eval(get("Rain"))
+    data["temp"]=eval(get("Temp"))
 
-        if abs(data["rain"])>RAIN_LIMIT or abs(data["temp"])>TEMP_LIMIT:
-            return data, False
-        return data, True
-    except:
-        messagebox.showerror("Error", "Data could not be retrieved")
+    if abs(data["rain"])>RAIN_LIMIT or abs(data["temp"])>TEMP_LIMIT:
+        return data, False
+    return data, True
+    #except:
+        #messagebox.showerror("Error", "Data could not be retrieved")
 
 
 #File Reading and Writting
@@ -66,6 +69,9 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
     datas=[]
     bad_data=0
     column=[]
+    first_year=999999
+    last_year=0
+    complete_date=False
 
     if file_name=="Hello There!":
         messagebox.showinfo("","General Kenobi, you're a bold one.")
@@ -73,7 +79,13 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
 
     for i in range(0, len(column_format)):
         column.append({"pos":i, "name":column_format_name[i], "val":column_format[i]})
-
+        if not AUTO_MODE:
+            if column_format[i]=="Rain":
+                rain_col=column_format_name[i]
+            elif column_format[i]=="Temp":
+                temp_col=column_format_name[i]
+        if column_format[i]=="Date":
+            complete_date=True
     try:
         file=open(file_name, 'r', encoding=file_encoding)
         file_lines=file.readlines()
@@ -86,12 +98,15 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
         line=comp_line.split()
         #Main data input
         if flag_1 and line!=[]:
-            new_data, flag = create_data(line, column)
+            new_data, flag = create_data(line, column, complete_date)
             if flag:
                 if len(datas)==0:
                     datas.append(new_data)
                 elif new_data["date"]>datas[-1]["date"]:
-                        datas.append(new_data)
+                    datas.append(new_data)
+                    first_year=min(first_year, new_data["date"].year)
+                    last_year=max(last_year, new_data["date"].year)
+
                 else:
 #!!! To do: Auto sort by date
                     messagebox.showwaring("Warning", "Data not in order (Date: {})".format(line["date"]))
@@ -115,6 +130,16 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
                 rain_col=line[0]
             elif line[1][0:5]==TEMP_KEYWORD[0:5]:
                 temp_col=line[0]
+
+    if last_year-first_year>1:
+        end=len(datas)
+        i=0
+        while i<end:
+            if datas[i]["date"].year-first_year<TAKE_OUT_FIRST or last_year-datas[i]["date"].year<TAKE_OUT_LAST:
+                datas.pop(i)
+                end-=1
+            else:
+                i+=1
 
     log="{} values with {} bad values ({:.1f}%) (taken out)".format(len(datas), bad_data, bad_data/len(datas)*100)
     return datas, log
@@ -257,65 +282,72 @@ class Window():
         self.L_anayse.update_idletasks()
         self.load_begin()
 
-        res_text=analyse+"\n"
+        plot_depth=False
+        title=analyse+": "
         if analyse=="Data Cleaning":
             if self.daily_av.get():
-                res_text=ta.clean_daily_average(GV.datas)
+                text=ta.clean_daily_average(GV.datas)
 
             else:
+                text=""
                 for data in GV.datas:
-                    res_text+="\n"
+                    text+="\n"
                     for elem in data:
-                        res_text+=str(data[elem])+"\t"
+                        text+=str(data[elem])+"\t"
 
         elif analyse=="Difference Time":
+            plot_depth=4
             delta_t=datetime.timedelta(hours=int(self.Sb_tweak2.get()))
             time_max_event=datetime.timedelta(hours=int(self.Sb_tweak3.get()))
             period=self.period.get()
             go, min, max, max_limit=self.find_min_max(1, 3, 5)
-            res_text+="delta t: {}, event time max: {}, from: {}°C to: {}°C".format(delta_t, time_max_event, min, max)
+            title+="delta t: {}, event time max: {}, from: {}°C to: {}°C".format(delta_t, time_max_event, min, max)
             if max_limit:
-                res_text+=" with max limit"
-            res_text+="\n"
+                title+=" with max limit"
+            title+="\n"
             if go:
                 text, data=ta.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
 
 
         elif analyse=="Temp Average":
+            plot_depth=3
             period_type=self.analy_type.get()
             go, min, max, max_limit=self.find_min_max(0, 2, 4)
-            res_text+="from: {}°C to: {}°C".format(min, max)
+            title+="from: {}°C to: {}°C".format(min, max)
             if period_type:
-                res_text+=", per event\n"
+                title+=", per event\n"
             else:
-                res_text+=", day to day\n"
+                title+=", day to day\n"
             if go:
                 text, data=ta.temp_average(GV.datas, period_type, min, max, max_limit)
 
         elif analyse=="Day To Span Average":
+            plot_depth=4
             span=int(self.Sb_tweak1.get())
             days=int(self.Sb_tweak2.get())
             analy_type=self.analy_type.get()
             period=self.period.get()
             go, min, max, max_limit=self.find_min_max(1, 3, 5)
-            res_text+="span:{} days, min time beet. events:{} days,  from: {}°C to: {}°C".format(span, days, min, max)
+            title+="span: {} days, min time beet. events: {} days,  from: {}°C to: {}°C".format(span, days, min, max)
             if max_limit:
-                res_text+=" with max limit"
+                title+=" with max limit"
             if analy_type:
-                res_text+=", per event\n"
+                title+=", per event\n"
             else:
-                res_text+=", day to day\n"
+                title+=", day to day\n"
             if go:
                 text, data=ta.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days, period)
 
         elif analyse=="Rain Cumul":
+            plot_depth=3
             min_rain=int(self.w_list[4].get())
             min_time_beetween_event=int(self.w_list[5].get())
+            period=self.period.get()
             go, min, max, max_limit=self.find_min_max(None, 1, 3)
             if go:
-                text, data=ra.rain_cumul(GV.datas, min, max, min_time_beetween_event, min_rain)
+                text, data=ra.rain_cumul(GV.datas, min, max, min_time_beetween_event, min_rain, period)
 
-        res_text+=text
+        res_text=title+"\n"+text
         if self.output_toggle.get():
             if not file_write(self.E_output.get(),res_text, GV.read_log):
                 messagebox.showerror("Error", "File not found (404)")
@@ -331,8 +363,9 @@ class Window():
 
         self.load_end()
 
-        if self.plot_toggle.get():
-            plot.plot_depth4(data)
+        if self.plot_toggle.get() and plot_depth:
+            plot.plot_data(data, plot_depth, title)
+
 
     def change_analyse(self, value):
         for child in self.tweak_frame.winfo_children():
@@ -418,13 +451,14 @@ class Window():
             self.L_info.config(text=DAY_TO_SPAN_INFO+AUTO_RANGE_INFO+WITH_MAX_INFO)
 
         elif value=="Rain Cumul":
+            self.period.set(1)
             tk.Label(self.tweak_frame, text="Step:").grid(row=row,column=1)
             for w in self.w_list:
                 w.destroy()
             self.w_list=[]
 
             self.auto_step.set(1)
-            self.create_range(row, 2, 3, 24)
+            self.create_range(row, 2, 6, 24)
             row+=1
             tk.Label(self.tweak_frame, text="Min Rain: ").grid(row=row,column=1)
             self.w_list.append(tk.Spinbox(self.tweak_frame, from_=0, to_=1000, justify=tk.RIGHT, width=3))
@@ -440,6 +474,11 @@ class Window():
             self.w_list[-1].grid(row=row,column=2)
             tk.Label(self.tweak_frame, text="Min").grid(row=row,column=3)
 
+            tk.Label(self.tweak_frame, text="Period:").grid(row=1, column=8)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="All Year", value=1).grid(row=2, column=8, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="Season", value=2).grid(row=3, column=8, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="Month", value=3).grid(row=4, column=8, sticky=tk.W)
+
             self.L_info.config(text=RAIN_CUMUL_INFO)
 
 
@@ -452,13 +491,14 @@ class Window():
         self.w.config(cursor="watch")
 
         self.load_w=tk.Toplevel()
-        self.load_w.title("Loading")
+        self.load_w.title("Loading...")
         self.load_w.geometry('%dx%d+%d+%d' % (load_w_width, load_w_height, x, y))
         tk.Label(self.load_w, text="Loading, please wait...\n(This can take a few minutes)").pack()
 
         self.w.update()
         self.load_w.update()
-        self.load_w.grab_set()
+        self.load_w.tkraise(self.w)
+        #self.load_w.grab_set()
 
     def load_end(self):
         self.w.config(cursor="")
@@ -569,14 +609,27 @@ class Window():
 #######################################################################################
 #                      Global Constant                                                #
 #######################################################################################
-#File format
-DATE_FORMAT='%Y-%m-%d-%H-%M'
 
-AUTO_MODE=True
-#Rain column name
-RAIN_KEYWORD="Niederschlag"
-#Temperature column name
-TEMP_KEYWORD="Lufttemperatur"
+
+
+TAKE_OUT_FIRST=1 #Number of years to take out
+TAKE_OUT_LAST=1
+
+#Different for each type of file
+#File format
+# DATE_FORMAT='%Y-%m-%d-%H-%M'
+# AUTO_MODE=True
+# RAIN_KEYWORD="Niederschlag"
+# TEMP_KEYWORD="Lufttemperatur"
+# column_format_name=["STA", "JAHR", "MO", "TG", "HH", "MM"]
+# column_format=["Station", "Year", "Month", "Day", "Hour", "Minutes"]
+
+DATE_FORMAT='%d/%m/%Y'
+AUTO_MODE=False
+column_format_name=["Date", "Rain", "Temp"]
+column_format=["Date", "Rain", "Temp"]
+#END
+
 
 RAIN_LIMIT=100
 TEMP_LIMIT=100
@@ -590,9 +643,6 @@ DEFAULT_FILE_NAME="../test_file/month6.txt"
 FILE_ENCODING="ISO 8859-1"        #Encoding not same on linux and windows (fgs wondows)
 
 
-
-column_format_name=["STA", "JAHR", "MO", "TG", "HH", "MM"]
-column_format=["Station", "Year", "Month", "Day", "Hour", "Minutes"]
 
 CLEANING_INFO=""" Description:
 Data Cleaning:

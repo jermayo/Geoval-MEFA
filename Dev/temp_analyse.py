@@ -231,8 +231,6 @@ def temp_average(datas, analy_type, min, max, max_limit):
                             else:
                                 events[day.year][temp]["neg"]+=1
                             events[day.year][temp]["total"]+=1
-
-
     return build_text(events, min, max), events
 
 def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event, period):
