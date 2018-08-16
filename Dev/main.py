@@ -6,7 +6,7 @@
 # Sion, Août 2018
 
 
-
+import sys
 import tkinter as tk
 from tkinter import messagebox
 import datetime
@@ -759,5 +759,10 @@ With 'With max' (only possible for Auto Range), an event is counted ONLY in the 
 #######################################################################################
 GV=GlobalVariables()
 
+if len(sys.argv)==2:
+    DEFAULT_FILE_NAME=sys.argv[1]
+
 main=Window()
+if len(sys.argv)==2:
+    main.open_file()
 main.w.mainloop()

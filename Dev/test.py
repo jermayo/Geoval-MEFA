@@ -2,6 +2,7 @@ import datetime
 import tkinter as tk
 import plot
 import random
+import sys
 
 # l1=[i for i in range(0,5)]
 # l2=[i for i in range(5,10)]
@@ -58,9 +59,11 @@ import random
 #                 data[year][limit][period][elem]=random.random()
 # plot.plot_depth4(data)
 
-x=[2,6,43,6,8,8,5,43,3,4,6,8,34]
-y=[56,34,34,53,6,54,43,34,34,5,6,45,67]
-x=[60,61,62,63,65]
-y=[3.1,3.6,3.8,4,4.1]
+# x=[2,6,43,6,8,8,5,43,3,4,6,8,34]
+# y=[56,34,34,53,6,54,43,34,34,5,6,45,67]
+# x=[60,61,62,63,65]
+# y=[3.1,3.6,3.8,4,4.1]
+#
+# print(plot.get_points(x,y))
 
-print(plot.get_points(x,y))
+print(sys.argv)
