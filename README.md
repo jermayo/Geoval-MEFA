@@ -22,8 +22,8 @@ Dossiers:
 4.  Results:    Certain résultats sous forme de tableau excel
 
 
-Version:
-Dev: 1.9.2, Fixed: 1.9.1 (dernière), Exe: Linux: 1.9.1 mefa_v18.x, Windows: 1.8.0 mefa_v18.exe
+Versions:
+Dev: 1.9.3 (?), Fixed: 1.9.2, Exe: Linux: 1.9.2 mefa_v19.x, Windows: 1.8.1 mefa_v19.exe
 
 
 

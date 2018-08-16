@@ -186,6 +186,8 @@ class Window():
         self.output_toggle.set(1)
         self.plot_toggle = tk.IntVar()
         self.plot_toggle.set(1)
+        self.save_plot_toggle=tk.IntVar()
+        self.save_plot_toggle.set(0)
         self.file_name="..."
         self.auto_step=tk.IntVar()
         self.auto_step.set(0)
@@ -209,7 +211,7 @@ class Window():
 
         self.B_exit = tk.Button(self.w, text="Change Load Param", command=self.change_load)
         self.B_exit.grid(row=5, column=3, sticky=tk.SW)
-        self.B_exit = tk.Button(self.w, text="Exit", command=self.w.destroy)
+        self.B_exit = tk.Button(self.w, text="Exit", command=self.exit)
         self.B_exit.grid(row=5, column=4, sticky=tk.SW)
 
         self.L_file=tk.Label(self.w, text=self.file_name)
@@ -239,6 +241,8 @@ class Window():
         self.E_output.grid(row=2,column=2)
         self.CB_plot = tk.Checkbutton(output_frame, variable=self.plot_toggle, text="Plot graph")
         self.CB_plot.grid(row=3,column=1)
+        self.CB_plot = tk.Checkbutton(output_frame, variable=self.save_plot_toggle, text="Save Plot")
+        self.CB_plot.grid(row=3,column=2)
         output_frame.grid(row=1,rowspan=2, column=3, stick=tk.W)
 
 
@@ -379,7 +383,8 @@ class Window():
         self.load_end()
 
         if self.plot_toggle.get() and plot_depth:
-            plot.plot_data(data, plot_depth, title)
+            if not plot.plot_data(data, plot_depth, title, self.save_plot_toggle.get()):
+                messagebox.showwarning("Warning", "Cannot plot with only one year.")
 
 
     def change_analyse(self, value):
@@ -685,6 +690,10 @@ class Window():
             GV.temp_keyword=self.auto_mode_l[3].get()
         self.change_w.destroy()
 
+    def exit(self):
+        plot.destroy()
+        self.w.destroy()
+
 
 #######################################################################################
 #                      Global Constant                                                #
@@ -697,7 +706,7 @@ TAKE_OUT_LAST=1
 
 
 DEFAULT_FILE_NAME=""
-# DEFAULT_FILE_NAME="../test_file/month6.txt"
+DEFAULT_FILE_NAME="../test_file/month6.txt"
 # DEFAULT_FILE_NAME="../test_file/sion_big.txt"
 
 

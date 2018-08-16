@@ -46,14 +46,21 @@ import random
 # print((-1)*(start-end))
 
 
-data={}
+# data={}
+#
+# for year in range(2000, 2003):
+#     data[year]={}
+#     for limit in range(5,7):
+#         data[year][limit]={}
+#         for period in ["A","B","C"]:
+#             data[year][limit][period]={}
+#             for elem in ["pos","neg","tot"]:
+#                 data[year][limit][period][elem]=random.random()
+# plot.plot_depth4(data)
 
-for year in range(2000, 2003):
-    data[year]={}
-    for limit in range(5,7):
-        data[year][limit]={}
-        for period in ["A","B","C"]:
-            data[year][limit][period]={}
-            for elem in ["pos","neg","tot"]:
-                data[year][limit][period][elem]=random.random()
-plot.plot_depth4(data)
+x=[2,6,43,6,8,8,5,43,3,4,6,8,34]
+y=[56,34,34,53,6,54,43,34,34,5,6,45,67]
+x=[60,61,62,63,65]
+y=[3.1,3.6,3.8,4,4.1]
+
+print(plot.get_points(x,y))
