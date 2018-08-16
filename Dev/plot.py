@@ -57,7 +57,7 @@ def build_plot(data_matrix, title, save_plot, extra_text="", fig_numb=1):
         plt.legend(bbox_to_anchor=(1, 1), loc='best', borderaxespad=0.)#(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
         fig_numb+=1
         if save_plot:
-            plt.savefig(str(title+extra_text+str(elem))+".pdf")
+            plt.savefig(extra_text+str(elem)+" "+str(title)+".pdf")
     return fig_numb
 
 def plot_data(data, data_depth, title, save_plot):

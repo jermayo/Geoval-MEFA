@@ -261,6 +261,7 @@ class Window():
         self.change_analyse("Data Cleaning")
 
     def open_file(self):
+        plot.destroy()
         old_text=self.file_name
         self.L_file.config(text = "Loading File...")
         self.L_file.grid(row=2,column=0,columnspan=2)
@@ -323,7 +324,7 @@ class Window():
             title+="delta t: {}, event time max: {}, from: {}°C to: {}°C".format(delta_t, time_max_event, min, max)
             if max_limit:
                 title+=" with max limit"
-            title+="\n"
+            #title+="\n"
             if go:
                 text, data=ta.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
 
@@ -334,9 +335,9 @@ class Window():
             go, min, max, max_limit=self.find_min_max(0, 2, 4)
             title+="from: {}°C to: {}°C".format(min, max)
             if period_type:
-                title+=", per event\n"
+                title+=", per event"
             else:
-                title+=", day to day\n"
+                title+=", day to day"
             if go:
                 text, data=ta.temp_average(GV.datas, period_type, min, max, max_limit)
 
@@ -351,9 +352,9 @@ class Window():
             if max_limit:
                 title+=" with max limit"
             if analy_type:
-                title+=", per event\n"
+                title+=", per event"
             else:
-                title+=", day to day\n"
+                title+=", day to day"
             if go:
                 text, data=ta.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days, period)
 
@@ -701,12 +702,12 @@ class Window():
 
 
 
-TAKE_OUT_FIRST=1 #Number of years to take out
+TAKE_OUT_FIRST=2 #Number of years to take out
 TAKE_OUT_LAST=1
 
 
 DEFAULT_FILE_NAME=""
-DEFAULT_FILE_NAME="../test_file/month6.txt"
+# DEFAULT_FILE_NAME="../test_file/month6.txt"
 # DEFAULT_FILE_NAME="../test_file/sion_big.txt"
 
 
