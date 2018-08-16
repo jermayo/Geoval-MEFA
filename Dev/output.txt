@@ -1,8 +1,6 @@
 					2018-08-16
 Result of analyse of data: 26208 values with 0 bad values (0.0%) (taken out)
-Temp Average: from: 5°C to: 10°C, day to day
-
-	5				6				7				8				9				10				
-																									
-	pos	neg	tot		pos	neg	tot		pos	neg	tot		pos	neg	tot		pos	neg	tot		pos	neg	tot		
-2016	0	0	0		0	0	0		0	0	0		0	0	0		0	0	0		0	0	0	
+Rain Cumul: 
+Time Span: (Hours)	6.0	7.0	8.0	9.0	10.0	11.0	12.0	13.0	14.0	15.0	16.0	17.0	18.0	19.0	20.0	21.0	22.0	23.0	24.0	
+		Year	Year	Year	Year	Year	Year	Year	Year	Year	Year	Year	Year	Year	Year	Year	Year	Year	Year	Year
+2016		19	27	26	24	24	25	26	26	29	26	27	27	27	27	28	27	28	29	27
