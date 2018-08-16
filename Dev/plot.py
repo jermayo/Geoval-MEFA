@@ -13,20 +13,30 @@ def get_data(sub_data_matrix, sub_data, lim_list, limit, year):
 
     return sub_data_matrix
 
-def build_plot(ax, data_matrix, total_row, total_column, column=0, extra_text=""):
-    row=0
-    for elem in data_matrix:
-        for lim in data_matrix[elem]:
-            if total_row==1 and total_column==1:
-                n=ax
-            elif total_column==1 or total_row==1:
-                n=ax[row]
-            else:
-                n=ax[row][column]
-            n.set_title(extra_text+str(elem))
-            n.plot(data_matrix[elem][lim]["xaxis"], data_matrix[elem][lim]["yaxis"])
-        row+=1
+# def build_plot(ax, data_matrix, total_row, total_column, column=0, extra_text=""):
+#     row=0
+#     for elem in data_matrix:
+#         for lim in data_matrix[elem]:
+#             if total_row==1 and total_column==1:
+#                 n=ax
+#             elif total_column==1 or total_row==1:
+#                 n=ax[row]
+#             else:
+#                 n=ax[row][column]
+#             n.set_title(extra_text+str(elem))
+#             n.plot(data_matrix[elem][lim]["xaxis"], data_matrix[elem][lim]["yaxis"], label=str(lim))
+#             n.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+#         row+=1
 
+def build_plot(data_matrix, title, extra_text="", fig_numb=1):
+    for elem in data_matrix:
+        plt.figure(title+str(fig_numb))
+        plt.title(extra_text+str(elem))
+        for lim in data_matrix[elem]:
+            plt.plot(data_matrix[elem][lim]["xaxis"], data_matrix[elem][lim]["yaxis"], label=str(lim))
+        plt.legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=0.)
+        fig_numb+=1
+    return fig_numb
 
 def plot_data(data, data_depth, title):
 
@@ -50,15 +60,25 @@ def plot_data(data, data_depth, title):
         for i in data_matrix:
             rows=len(data_matrix[i])
             break
-    fig, ax = plt.subplots(nrows=rows, ncols=columns)
-    if data_depth==4:
-        column=0
-        for period in data_matrix:
-            build_plot(ax, data_matrix[period], rows, columns, column=column, extra_text=str(period)+" ")
-            column+=1
-    elif data_depth==3:
-        build_plot(ax, data_matrix, rows, columns)
 
-    plt.tight_layout()
-    plt.suptitle(title)
+    # fig, ax = plt.subplots(nrows=rows, ncols=columns)
+    # if data_depth==4:
+    #     column=0
+    #     for period in data_matrix:
+    #         build_plot(ax, data_matrix[period], rows, columns, column=column, extra_text=str(period)+" ")
+    #         column+=1
+    # elif data_depth==3:
+    #     build_plot(ax, data_matrix, rows, columns)
+
+
+    if data_depth==4:
+        fig_numb=1
+        for period in data_matrix:
+            fig_numb=build_plot(data_matrix[period], title, extra_text=str(period)+" ", fig_numb=fig_numb)
+            fig_numb+=1
+    elif data_depth==3:
+        build_plot(data_matrix, title)
+
+    # plt.tight_layout()
+    # plt.suptitle(title)
     plt.show()

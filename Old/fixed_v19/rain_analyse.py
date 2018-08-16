@@ -16,7 +16,7 @@ from temp_analyse import date_beetween
 
 def rain_cumul(datas, min_step, max_step, min_time_beetween_event, min_rain, period):
     min_time_beetween_event=datetime.timedelta(minutes=min_time_beetween_event)
-    min_step=datetime.timedelta(hours=min_step)
+    min_step=max(datetime.timedelta(hours=min_step), datas[1]["date"]-datas[0]["date"])
     max_step=datetime.timedelta(hours=max_step+1)
 
     if period==1:
@@ -53,7 +53,7 @@ def rain_cumul(datas, min_step, max_step, min_time_beetween_event, min_rain, per
         j=i
         while datas[j]["date"]>first_date and datas[i]["date"]-datas[j]["date"]<max_step:
             cumul+=datas[j]["rain"]
-            if datas[i]["date"]-datas[j]["date"]>delta_t:
+            if datas[i]["date"]-datas[j]["date"]>=delta_t:
                 case=events[year][delta_t]
                 if cumul>=min_rain and not case["during_event"]:
                     for period in period_list:

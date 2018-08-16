@@ -1,5 +1,5 @@
 #!/bin/bash
-FILE=mefa_v18.x
+FILE=mefa_v19.x
 echo "Compiling..."
 echo ""
 pyinstaller -F main.py

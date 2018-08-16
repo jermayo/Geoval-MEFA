@@ -225,12 +225,18 @@ def temp_average(datas, analy_type, min, max, max_limit):
                 if abs(diff)<temp:
                     events[day.year][temp]["during_event"]=False
                     if temp in events[day.year]:
-                        if not max_limit or int(abs(case["new_event"]["max"])<temp+1):
+                        if not max_limit or int(abs(events[day.year][temp]["max"])<temp+1):
                             if diff>0:
                                 events[day.year][temp]["pos"]+=1
                             else:
                                 events[day.year][temp]["neg"]+=1
                             events[day.year][temp]["total"]+=1
+    for year in events:
+        for temp in events[year]:
+            events[year][temp].pop("during_event", None)
+            events[year][temp].pop("max", None)
+
+
     return build_text(events, min, max), events
 
 def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event, period):

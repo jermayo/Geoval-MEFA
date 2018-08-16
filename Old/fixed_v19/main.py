@@ -37,22 +37,22 @@ def create_data(line, column, complete_date):
                 return line[i]
         return None
 
-    #try:
-    if complete_date:
-        date_val=get("Date")
-    else:
-        date_val=get("Year")+"-"+get("Month")+"-"+get("Day")
-        date_val+="-"+get("Hour")+"-"+get("Minutes")
-    data={"date":datetime.datetime.strptime(date_val, DATE_FORMAT)}
+    try:
+        if complete_date:
+            date_val=get("Date")
+        else:
+            date_val=get("Year")+"-"+get("Month")+"-"+get("Day")
+            date_val+="-"+get("Hour")+"-"+get("Minutes")
+        data={"date":datetime.datetime.strptime(date_val, DATE_FORMAT)}
 
-    data["rain"]=eval(get("Rain"))
-    data["temp"]=eval(get("Temp"))
+        data["rain"]=eval(get("Rain"))
+        data["temp"]=eval(get("Temp"))
 
-    if abs(data["rain"])>RAIN_LIMIT or abs(data["temp"])>TEMP_LIMIT:
-        return data, False
-    return data, True
-    #except:
-        #messagebox.showerror("Error", "Data could not be retrieved")
+        if abs(data["rain"])>RAIN_LIMIT or abs(data["temp"])>TEMP_LIMIT:
+            return data, False
+        return data, True
+    except:
+        messagebox.showerror("Error", "Data could not be retrieved")
 
 
 #File Reading and Writting
@@ -91,7 +91,7 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
         file_lines=file.readlines()
         file.close()
     except FileNotFoundError:
-        return False, False
+        return False, False, "File not found (Err. 404)"
 
     flag_1=False
     for comp_line in file_lines:
@@ -141,8 +141,10 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
             else:
                 i+=1
 
+    if len(datas)==0:
+        return False, False, "Data could not be retrieved"
     log="{} values with {} bad values ({:.1f}%) (taken out)".format(len(datas), bad_data, bad_data/len(datas)*100)
-    return datas, log
+    return datas, log, None
 
 
 def file_write(file_name, res, log):
@@ -249,7 +251,7 @@ class Window():
         self.load_begin()
 
         self.file_name=self.E_file.get()
-        datas, read_log=read_file(self.file_name, GV.temp_col, GV.rain_col, file_encoding=FILE_ENCODING)
+        datas, read_log, message=read_file(self.file_name, GV.temp_col, GV.rain_col, file_encoding=FILE_ENCODING)
         self.load_end()
         if read_log:
             GV.datas, GV.read_log = datas, read_log
@@ -257,7 +259,7 @@ class Window():
             self.L_file.config(text = "File '{}' loaded".format(self.file_name))
             messagebox.showinfo("Done", "File loaded: \n"+GV.read_log)
         else:
-            messagebox.showerror("Error", "File not found (404)")
+            messagebox.showerror("Error", message)
             self.L_file.config(text = old_text)
 
     def find_min_max(self, w_single, w_min, w_max):
@@ -293,7 +295,9 @@ class Window():
                 for data in GV.datas:
                     text+="\n"
                     for elem in data:
-                        text+=str(data[elem])+"\t"
+                        print(elem, data[elem], end=" ")
+                        text+=str(data[elem])+"\t\t"
+                    print("")
 
         elif analyse=="Difference Time":
             plot_depth=4
@@ -615,8 +619,13 @@ class Window():
 TAKE_OUT_FIRST=1 #Number of years to take out
 TAKE_OUT_LAST=1
 
+
+#DEFAULT_FILE_NAME=""
+
+
 #Different for each type of file
 #File format
+# DEFAULT_FILE_NAME="../test_file/month6.txt"
 # DATE_FORMAT='%Y-%m-%d-%H-%M'
 # AUTO_MODE=True
 # RAIN_KEYWORD="Niederschlag"
@@ -624,6 +633,7 @@ TAKE_OUT_LAST=1
 # column_format_name=["STA", "JAHR", "MO", "TG", "HH", "MM"]
 # column_format=["Station", "Year", "Month", "Day", "Hour", "Minutes"]
 
+DEFAULT_FILE_NAME="../test_file/sion_big.txt"
 DATE_FORMAT='%d/%m/%Y'
 AUTO_MODE=False
 column_format_name=["Date", "Rain", "Temp"]
@@ -637,8 +647,7 @@ TEMP_LIMIT=100
 
 ANALYSE_TYPE = ("Data Cleaning", "Difference Time", "Temp Average", "Day To Span Average", "Rain Cumul")
 
-DEFAULT_FILE_NAME="../test_file/month6.txt"
-#DEFAULT_FILE_NAME=""
+
 
 FILE_ENCODING="ISO 8859-1"        #Encoding not same on linux and windows (fgs wondows)
 
