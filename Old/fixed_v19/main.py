@@ -28,6 +28,18 @@ class GlobalVariables():
         self.temp_col=False
         self.rain_col=False
 
+        self.date_format_list=['%Y-%m-%d-%H-%M', '%d/%m/%Y']
+        self.column_name_list=[["STA", "JAHR", "MO", "TG", "HH", "MM"], ["Date", "Rain", "Temp"]]
+        self.column_format_list=[["Station", "Year", "Month", "Day", "Hour", "Minutes"], ["Date", "Rain", "Temp"]]
+
+        self.date_format=self.date_format_list[0]
+        self.column_format=self.column_format_list[0]
+        self.column_name=self.column_name_list[0]
+        self.auto_mode=True
+        self.rain_keyword="Niederschlag"
+        self.temp_keyword="Lufttemperatur"
+
+
 #Creation of data from input, returns a list of the datas (dictionnary)
 #and if the data is good (True) not (False)
 def create_data(line, column, complete_date):
@@ -43,7 +55,7 @@ def create_data(line, column, complete_date):
         else:
             date_val=get("Year")+"-"+get("Month")+"-"+get("Day")
             date_val+="-"+get("Hour")+"-"+get("Minutes")
-        data={"date":datetime.datetime.strptime(date_val, DATE_FORMAT)}
+        data={"date":datetime.datetime.strptime(date_val, GV.date_format)}
 
         data["rain"]=eval(get("Rain"))
         data["temp"]=eval(get("Temp"))
@@ -76,15 +88,14 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
     if file_name=="Hello There!":
         messagebox.showinfo("","General Kenobi, you're a bold one.")
 
-
-    for i in range(0, len(column_format)):
-        column.append({"pos":i, "name":column_format_name[i], "val":column_format[i]})
-        if not AUTO_MODE:
-            if column_format[i]=="Rain":
-                rain_col=column_format_name[i]
-            elif column_format[i]=="Temp":
-                temp_col=column_format_name[i]
-        if column_format[i]=="Date":
+    for i in range(0, len(GV.column_format)):
+        column.append({"pos":i, "name":GV.column_name[i], "val":GV.column_format[i]})
+        if not GV.auto_mode:
+            if GV.column_format[i]=="Rain":
+                rain_col=GV.column_name[i]
+            elif GV.column_format[i]=="Temp":
+                temp_col=GV.column_name[i]
+        if GV.column_format[i]=="Date":
             complete_date=True
     try:
         file=open(file_name, 'r', encoding=file_encoding)
@@ -109,7 +120,7 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
 
                 else:
 #!!! To do: Auto sort by date
-                    messagebox.showwaring("Warning", "Data not in order (Date: {})".format(line["date"]))
+                    messagebox.showwarning("Warning", "Data not in order (Date: {})".format(line["date"]))
             else:
                 bad_data+=1
 
@@ -125,10 +136,10 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
             if not flag_1:
                 messagebox.showwaring("Error", "No temperature or rain data detected")
         #Automatic rain and temp column detection
-        elif len(line)>1 and AUTO_MODE:
-            if line[1][0:5]==RAIN_KEYWORD[0:5]:
+        elif len(line)>1 and GV.auto_mode:
+            if line[1][0:5]==GV.rain_keyword[0:5]:
                 rain_col=line[0]
-            elif line[1][0:5]==TEMP_KEYWORD[0:5]:
+            elif line[1][0:5]==GV.temp_keyword[0:5]:
                 temp_col=line[0]
 
     if last_year-first_year>1:
@@ -175,6 +186,8 @@ class Window():
         self.output_toggle.set(1)
         self.plot_toggle = tk.IntVar()
         self.plot_toggle.set(1)
+        self.save_plot_toggle=tk.IntVar()
+        self.save_plot_toggle.set(0)
         self.file_name="..."
         self.auto_step=tk.IntVar()
         self.auto_step.set(0)
@@ -196,15 +209,17 @@ class Window():
         self.B_open = tk.Button(self.w, text="Open", command=self.open_file)
         self.B_open.grid(row=1,column=2)
 
-        self.B_exit = tk.Button(self.w, text="Exit", command=self.w.destroy)
+        self.B_exit = tk.Button(self.w, text="Change Load Param", command=self.change_load)
         self.B_exit.grid(row=5, column=3, sticky=tk.SW)
+        self.B_exit = tk.Button(self.w, text="Exit", command=self.exit)
+        self.B_exit.grid(row=5, column=4, sticky=tk.SW)
 
         self.L_file=tk.Label(self.w, text=self.file_name)
 
         self.result_frame=tk.LabelFrame(self.w, text="Results")
         self.res_text=tk.Label(self.result_frame, justify=tk.LEFT)
         self.res_text.grid()
-        self.result_frame.grid(row=4,column=3)
+        self.result_frame.grid(row=4,column=3, columnspan=3)
         self.result_frame.grid_remove()
 
         self.L_anayse=tk.Label(self.w, text = "")
@@ -226,6 +241,8 @@ class Window():
         self.E_output.grid(row=2,column=2)
         self.CB_plot = tk.Checkbutton(output_frame, variable=self.plot_toggle, text="Plot graph")
         self.CB_plot.grid(row=3,column=1)
+        self.CB_plot = tk.Checkbutton(output_frame, variable=self.save_plot_toggle, text="Save Plot")
+        self.CB_plot.grid(row=3,column=2)
         output_frame.grid(row=1,rowspan=2, column=3, stick=tk.W)
 
 
@@ -295,9 +312,7 @@ class Window():
                 for data in GV.datas:
                     text+="\n"
                     for elem in data:
-                        print(elem, data[elem], end=" ")
                         text+=str(data[elem])+"\t\t"
-                    print("")
 
         elif analyse=="Difference Time":
             plot_depth=4
@@ -368,7 +383,8 @@ class Window():
         self.load_end()
 
         if self.plot_toggle.get() and plot_depth:
-            plot.plot_data(data, plot_depth, title)
+            if not plot.plot_data(data, plot_depth, title, self.save_plot_toggle.get()):
+                messagebox.showwarning("Warning", "Cannot plot with only one year.")
 
 
     def change_analyse(self, value):
@@ -609,6 +625,75 @@ class Window():
         self.w_list[-1].grid(row=row,column=first_column+3)
 
 
+    def change_load(self):
+        self.auto_mode=tk.IntVar()
+        self.auto_mode.set(GV.auto_mode)
+        self.date_format=tk.StringVar()
+        self.date_format.set(GV.date_format)
+        self.col_name=tk.StringVar()
+        self.col_name.set(GV.column_name)
+        self.col_format=tk.StringVar()
+        self.col_format.set(GV.column_format)
+
+        #x=self.w.winfo_x()+int(self.w.winfo_width()/2-change_load_w_width/2)
+        #y=self.w.winfo_y()+int(self.w.winfo_height()/2-change_load_w_height/2)
+
+        self.change_w=tk.Toplevel()
+        self.change_w.title("Change Loading Parameters")
+        #self.change_w.geometry('%dx%d+%d+%d' % (change_load_w_width, change_load_w_height, x, y))
+
+        tk.Label(self.change_w, text="Date format: ").grid(column=0, row=0)
+        tk.OptionMenu(self.change_w, self.date_format, *GV.date_format_list).grid(column=1, row=0)
+        tk.Label(self.change_w, text="Column Names: ").grid(column=0, row=1)
+        tk.OptionMenu(self.change_w, self.col_name, *GV.column_name_list).grid(column=1, row=1)
+        tk.Label(self.change_w, text="Column Format: ").grid(column=0, row=2)
+        tk.OptionMenu(self.change_w, self.col_format, *GV.column_format_list).grid(column=1, row=2)
+        tk.Checkbutton(self.change_w, variable=self.auto_mode, text="Auto detection mode", command=self.auto_mode_true).grid(column=1, row=3)
+        tk.Button(self.change_w, text="Save", command=self.end_change_load).grid(column=1, row=6)
+
+        self.auto_mode_true()
+        self.w.update()
+        self.change_w.update()
+        self.change_w.tkraise(self.w)
+
+    def auto_mode_true(self):
+        if self.auto_mode.get():
+            self.auto_mode_l=[]
+            self.auto_mode_l.append(tk.Label(self.change_w, text="Rain Keyword: "))
+            self.auto_mode_l[-1].grid(row=4, column=0)
+            self.auto_mode_l.append(tk.Entry(self.change_w))
+            self.auto_mode_l[-1].insert(0, GV.rain_keyword)
+            self.auto_mode_l[-1].grid(row=4, column=1)
+            self.auto_mode_l.append(tk.Label(self.change_w, text="Temp Keyword: "))
+            self.auto_mode_l[-1].grid(row=5, column=0)
+            self.auto_mode_l.append(tk.Entry(self.change_w))
+            self.auto_mode_l[-1].insert(0, GV.temp_keyword)
+            self.auto_mode_l[-1].grid(row=5, column=1)
+        else:
+            for widget in self.auto_mode_l:
+                widget.destroy()
+
+    def end_change_load(self):
+        def make_list(string):
+            list=[]
+            for i in string.split("'"):
+                if "(" not in i and ")" not in i and "," not in i:
+                    list.append(i)
+            return list
+
+        GV.auto_mode=self.auto_mode.get()
+        GV.date_format=self.date_format.get()
+        GV.column_format=make_list(self.col_format.get())
+        GV.column_name=make_list(self.col_name.get())
+        if self.auto_mode.get():
+            GV.rain_keyword=self.auto_mode_l[1].get()
+            GV.temp_keyword=self.auto_mode_l[3].get()
+        self.change_w.destroy()
+
+    def exit(self):
+        plot.destroy()
+        self.w.destroy()
+
 
 #######################################################################################
 #                      Global Constant                                                #
@@ -620,25 +705,10 @@ TAKE_OUT_FIRST=1 #Number of years to take out
 TAKE_OUT_LAST=1
 
 
-#DEFAULT_FILE_NAME=""
+DEFAULT_FILE_NAME=""
+DEFAULT_FILE_NAME="../test_file/month6.txt"
+# DEFAULT_FILE_NAME="../test_file/sion_big.txt"
 
-
-#Different for each type of file
-#File format
-# DEFAULT_FILE_NAME="../test_file/month6.txt"
-# DATE_FORMAT='%Y-%m-%d-%H-%M'
-# AUTO_MODE=True
-# RAIN_KEYWORD="Niederschlag"
-# TEMP_KEYWORD="Lufttemperatur"
-# column_format_name=["STA", "JAHR", "MO", "TG", "HH", "MM"]
-# column_format=["Station", "Year", "Month", "Day", "Hour", "Minutes"]
-
-DEFAULT_FILE_NAME="../test_file/sion_big.txt"
-DATE_FORMAT='%d/%m/%Y'
-AUTO_MODE=False
-column_format_name=["Date", "Rain", "Temp"]
-column_format=["Date", "Rain", "Temp"]
-#END
 
 
 RAIN_LIMIT=100
