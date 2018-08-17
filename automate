@@ -1,0 +1,98 @@
+#!/bin/bash
+STATION=$1
+DATA_FOLDER=/home/jeremy/Documents/Geoval/Programme_Dev/test_file
+EXE_FOLDER=/home/jeremy/Documents/Geoval/Programme_Dev
+ANALYSE_TYPE=Day_To_Span_Average
+#ANALYSE_TYPE = ("Data_Cleaning", "Difference_Time", "Temp_Average", "Day_To_Span_Average", "Rain_Cumul")
+DEFAULT_FORMAT=0
+FILE_FORMAT=.txt
+
+echo "Creating temporary folder"
+mkdir $STATION"_TEMP"
+cd $STATION"_TEMP"
+
+echo "Executing programme MEFA"
+echo "########################"
+
+$EXE_FOLDER/mefa_v??.x $DATA_FOLDER/$STATION$FILE_FORMAT $ANALYSE_TYPE $DEFAULT_FORMAT-pe --save-plot --season
+
+echo "########################"
+echo "Creating PDF"
+
+FLAG=1
+if [ $FLAG == 1 ]
+then
+    for f in Winter*; do
+        [ -e "$f" ] && pdfunite Winter* Spring* Summer* Autumn* "../"$STATION"_"$ANALYSE_TYPE".pdf" || FLAG=2
+        break
+    done
+fi
+if [ $FLAG == 2 ]
+then
+    for f in Year*; do
+        [ -e "$f" ] && pdfunite Year* "../"$STATION"_"$ANALYSE_TYPE".pdf" || FLAG=3
+        break
+    done
+fi
+if [ $FLAG == 3 ]
+then
+    for f in Jan*; do
+        [ -e "$f" ] && pdfunite Jan* Feb* Mar* Apr* May* Jun* Jul* Aug* Sep* Oct* Nov* Dec* "../"$STATION"_"$ANALYSE_TYPE".pdf" || echo "Error, no data found"
+        break
+    done
+fi
+
+
+echo "Deleting temporary folder"
+cd ..
+rm -r $STATION"_TEMP"
+#!/bin/bash
+STATION=$1
+DATA_FOLDER=/home/jeremy/Documents/Geoval/Data
+EXE_FOLDER=/home/jeremy/Documents/Geoval/
+ANALYSE_TYPE=Difference_Time
+#ANALYSE_TYPE = ("Data_Cleaning", "Difference_Time", "Temp_Average", "Day_To_Span_Average", "Rain_Cumul")
+DEFAULT_FORMAT=0
+FILE_FORMAT=.dat
+
+echo "Creating temporary folder"
+mkdir $STATION"_TEMP"
+cd $STATION"_TEMP"
+
+echo "Executing programme MEFA"
+echo "########################"
+
+$EXE_FOLDER/mefa_v??.x $DATA_FOLDER/$STATION$FILE_FORMAT $ANALYSE_TYPE $DEFAULT_FORMAT-pe --save-plot --season
+#[-h, -pe, -wm, -da, --season/--month, --show-plot, --save-plot, -of]
+
+echo "########################"
+echo "Creating PDF"
+
+FLAG=1
+if [ $FLAG == 1 ]
+then
+    for f in Winter*; do
+        [ -e "$f" ] && pdfunite Winter* Spring* Summer* Autumn* "../"$STATION"_"$ANALYSE_TYPE".pdf" || FLAG=2
+        break
+    done
+fi
+if [ $FLAG == 2 ]
+then
+    for f in Year*; do
+        [ -e "$f" ] && pdfunite Year* "../"$STATION"_"$ANALYSE_TYPE".pdf" || FLAG=3
+        break
+    done
+fi
+if [ $FLAG == 3 ]
+then
+    for f in Jan*; do
+        [ -e "$f" ] && pdfunite Jan* Feb* Mar* Apr* May* Jun* Jul* Aug* Sep* Oct* Nov* Dec* "../"$STATION"_"$ANALYSE_TYPE".pdf" || echo "Error, no data found"
+        break
+    done
+fi
+
+
+echo "Deleting temporary folder"
+cd ..
+rm -r $STATION"_TEMP"
+echo "Done!"

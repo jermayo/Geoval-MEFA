@@ -22,20 +22,20 @@ import plot
 #######################################################################################
 #Global variables of the programme
 class GlobalVariables():
-    def __init__(self):
+    def __init__(self, default=0):
         self.datas=None
         self.read_log=None
         self.temp_col=False
         self.rain_col=False
 
-        self.date_format_list=['%Y-%m-%d-%H-%M', '%d/%m/%Y']
-        self.column_name_list=[["STA", "JAHR", "MO", "TG", "HH", "MM"], ["Date", "Rain", "Temp"]]
-        self.column_format_list=[["Station", "Year", "Month", "Day", "Hour", "Minutes"], ["Date", "Rain", "Temp"]]
+        self.date_format_list=['%Y-%m-%d-%H-%M', '%d/%m/%Y', '%Y-%m-%d']
+        self.column_name_list=[["STA", "JAHR", "MO", "TG", "HH", "MM"], ["Date", "Rain", "Temp"], ["Day", "Temp", "Rain"]]
+        self.column_format_list=[["Station", "Year", "Month", "Day", "Hour", "Minutes"], ["Date", "Rain", "Temp"], ["Date", "Temp", "Rain"]]
 
-        self.date_format=self.date_format_list[0]
-        self.column_format=self.column_format_list[0]
-        self.column_name=self.column_name_list[0]
-        self.auto_mode=True
+        self.date_format=self.date_format_list[default]
+        self.column_format=self.column_format_list[default]
+        self.column_name=self.column_name_list[default]
+        self.auto_mode=[True, False, False][default]
         self.rain_keyword="Niederschlag"
         self.temp_keyword="Lufttemperatur"
 
@@ -68,7 +68,7 @@ def create_data(line, column, complete_date):
 
 
 #File Reading and Writting
-def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
+def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8", show_info=False):
     def get_start(line, column):
         #Prevent exception
         if line==[]:
@@ -104,6 +104,10 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
     except FileNotFoundError:
         return False, False, "File not found (Err. 404)"
 
+    if show_info:
+        show_info=1
+        len_file_lines=len(file_lines)
+        state=0
     flag_1=False
     for comp_line in file_lines:
         line=comp_line.split()
@@ -120,7 +124,7 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
 
                 else:
 #!!! To do: Auto sort by date
-                    messagebox.showwarning("Warning", "Data not in order (Date: {})".format(line["date"]))
+                    return False, False, "Data not in order (Date: {})".format(line["date"])
             else:
                 bad_data+=1
 
@@ -134,7 +138,7 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
                     column.append({"pos":i, "name":temp_col, "val":"Temp"})
                     flag_1=True
             if not flag_1:
-                messagebox.showwaring("Error", "No temperature or rain data detected")
+                return False, False, "No temperature or rain data detected"
         #Automatic rain and temp column detection
         elif len(line)>1 and GV.auto_mode:
             if line[1][0:5]==GV.rain_keyword[0:5]:
@@ -142,15 +146,22 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8"):
             elif line[1][0:5]==GV.temp_keyword[0:5]:
                 temp_col=line[0]
 
+        if show_info:
+            if show_info/len_file_lines>state:
+                print("{:.0f}%".format(state*100))
+                state+=0.1
+            show_info+=1
+
     if last_year-first_year>1:
-        end=len(datas)
-        i=0
-        while i<end:
-            if datas[i]["date"].year-first_year<TAKE_OUT_FIRST or last_year-datas[i]["date"].year<TAKE_OUT_LAST:
-                datas.pop(i)
-                end-=1
-            else:
-                i+=1
+        if show_info:
+            print("Cleaning data...")
+        while datas[0]["date"].year-first_year<TAKE_OUT_FIRST:
+            datas.pop(0)
+
+        while last_year-datas[-1]["date"].year<TAKE_OUT_LAST:
+            datas.pop(-1)
+        if show_info:
+            print("Done!")
 
     if len(datas)==0:
         return False, False, "Data could not be retrieved"
@@ -258,7 +269,7 @@ class Window():
         self.tweak_frame.grid(row=4,column=0, rowspan=2, columnspan=3, sticky=tk.N)
         self.L_info.grid(row=7,column=0, rowspan=2, columnspan=4, sticky=tk.NW)
 
-        self.change_analyse("Data Cleaning")
+        self.change_analyse("Data_Cleaning")
 
     def open_file(self):
         plot.destroy()
@@ -304,7 +315,7 @@ class Window():
 
         plot_depth=False
         title=analyse+": "
-        if analyse=="Data Cleaning":
+        if analyse=="Data_Cleaning":
             if self.daily_av.get():
                 text=ta.clean_daily_average(GV.datas)
 
@@ -315,7 +326,7 @@ class Window():
                     for elem in data:
                         text+=str(data[elem])+"\t\t"
 
-        elif analyse=="Difference Time":
+        elif analyse=="Difference_Time":
             plot_depth=4
             delta_t=datetime.timedelta(hours=int(self.Sb_tweak2.get()))
             time_max_event=datetime.timedelta(hours=int(self.Sb_tweak3.get()))
@@ -329,7 +340,7 @@ class Window():
                 text, data=ta.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
 
 
-        elif analyse=="Temp Average":
+        elif analyse=="Temp_Average":
             plot_depth=3
             period_type=self.analy_type.get()
             go, min, max, max_limit=self.find_min_max(0, 2, 4)
@@ -341,7 +352,7 @@ class Window():
             if go:
                 text, data=ta.temp_average(GV.datas, period_type, min, max, max_limit)
 
-        elif analyse=="Day To Span Average":
+        elif analyse=="Day_To_Span_Average":
             plot_depth=4
             span=int(self.Sb_tweak1.get())
             days=int(self.Sb_tweak2.get())
@@ -358,7 +369,7 @@ class Window():
             if go:
                 text, data=ta.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days, period)
 
-        elif analyse=="Rain Cumul":
+        elif analyse=="Rain_Cumul":
             plot_depth=3
             min_rain=int(self.w_list[4].get())
             min_time_beetween_event=int(self.w_list[5].get())
@@ -394,12 +405,12 @@ class Window():
         self.auto_step.set(0)
         row=1
 
-        if value=="Data Cleaning":
+        if value=="Data_Cleaning":
             self.daily_av.set(0)
             tk.Checkbutton(self.tweak_frame, variable=self.daily_av, text="Daily Average").grid(row=row, column=2)
             self.L_info.config(text=CLEANING_INFO)
 
-        if value=="Difference Time":
+        if value=="Difference_Time":
             self.period.set(1)
 
             tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min).grid(row=row, column=1)
@@ -427,7 +438,7 @@ class Window():
 
             self.L_info.config(text=DIFF_TIME_INFO+AUTO_RANGE_INFO+WITH_MAX_INFO)
 
-        elif value=="Temp Average":
+        elif value=="Temp_Average":
             self.analy_type.set(0)
             tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min3).grid(row=row, column=1)
             row+=1
@@ -441,7 +452,7 @@ class Window():
 
             self.L_info.config(text=TEMP_AVERAGE_INFO+AUTO_RANGE_INFO)
 
-        elif value=="Day To Span Average":
+        elif value=="Day_To_Span_Average":
             self.analy_type.set(0)
             self.period.set(1)
             tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min4).grid(row=row, column=1,columnspan=2)
@@ -471,7 +482,7 @@ class Window():
 
             self.L_info.config(text=DAY_TO_SPAN_INFO+AUTO_RANGE_INFO+WITH_MAX_INFO)
 
-        elif value=="Rain Cumul":
+        elif value=="Rain_Cumul":
             self.period.set(1)
             tk.Label(self.tweak_frame, text="Step:").grid(row=row,column=1)
             for w in self.w_list:
@@ -695,7 +706,105 @@ class Window():
         plot.destroy()
         self.w.destroy()
 
+#######################################################################################
+###################### NO GUI #########################################################
 
+def analyse_from_prompt(argv):
+    print("Opening file ...")
+    analyse_type=argv[2]
+    per_event, with_max, save_plot, show_plot= False, False, False, False
+
+    if "-pe" in argv:
+        per_event=True
+    if "-wm" in argv:
+        with_max=True
+    period=1
+    if "--season" in argv:
+        period=2
+    if "--month" in argv:
+        period=3
+    if "--save-plot" in argv:
+        save_plot=True
+    if "--show-plot" in argv:
+        show_plot=True
+
+    datas, read_log, message=read_file(DEFAULT_FILE_NAME, False, False, file_encoding=FILE_ENCODING, show_info=True)
+    if message:
+        print(message)
+        return
+
+    print("Analysing data ...")
+
+    plot_depth=False
+    title=analyse_type+": "
+    if analyse_type=="Data_Cleaning":
+        if "-da" in argv:
+            text=ta.clean_daily_average(datas)
+        else:
+            text=""
+            for data in datas:
+                text+="\n"
+                for elem in data:
+                    text+=str(data[elem])+"\t\t"
+
+    elif analyse_type=="Difference_Time":
+        plot_depth=4
+        delta_t=datetime.timedelta(hours=24)
+        time_max_event=datetime.timedelta(hours=24)
+        min, max=5, 15
+        title+="delta t: {}, event time max: {}, from: {}°C to: {}°C".format(delta_t, time_max_event, min, max)
+        if with_max:
+            title+=" with max limit"
+        text, data=ta.diff_time(datas, delta_t, time_max_event, period, min, max, with_max)
+
+
+    elif analyse_type=="Temp_Average":
+        plot_depth=3
+        min, max= 5, 10
+        title+="from: {}°C to: {}°C".format(min, max)
+        if with_max:
+            title+=" with max limit"
+        if per_event:
+            title+=", per event"
+        else:
+            title+=", day to day"
+        text, data=ta.temp_average(datas, per_event, min, max, with_max)
+
+    elif analyse_type=="Day_To_Span_Average":
+        plot_depth=4
+        span=30
+        days=2
+        min, max=2,15
+        title+="span: {} days, min time beet. events: {} days,  from: {}°C to: {}°C".format(span, days, min, max)
+        if with_max:
+            title+=" with max limit"
+        if per_event:
+            title+=", per event"
+        else:
+            title+=", day to day"
+        text, data=ta.day_to_span_av(datas, span, min, max, with_max, per_event, days, period)
+
+    elif analyse_type=="Rain_Cumul":
+        plot_depth=3
+        min_rain=6
+        min_time_beetween_event=15
+        min, max = 6, 24
+        if go:
+            text, data=ra.rain_cumul(datas, min, max, min_time_beetween_event, min_rain, period)
+
+    res_text=title+"\n"+text
+    if "-of" in argv:
+        if not file_write("output.txt",res_text, read_log):
+            print("Error: File not found (404)")
+            return
+        else:
+            print("See file 'output.txt'")
+
+    if (show_plot or save_plot) and plot_depth:
+        if not plot.plot_data(data, plot_depth, title, save_plot, show_plot=show_plot):
+            print("Warning: Cannot plot with only one year.")
+
+    print("Analyse ended")
 #######################################################################################
 #                      Global Constant                                                #
 #######################################################################################
@@ -716,7 +825,7 @@ RAIN_LIMIT=100
 TEMP_LIMIT=100
 
 
-ANALYSE_TYPE = ("Data Cleaning", "Difference Time", "Temp Average", "Day To Span Average", "Rain Cumul")
+ANALYSE_TYPE = ("Data_Cleaning", "Difference_Time", "Temp_Average", "Day_To_Span_Average", "Rain_Cumul")
 
 
 
@@ -746,7 +855,7 @@ The typical average is calulated for each day of the year as the average of the 
 "Per event" implies that if two consecutive days are events, they only count as one,
 whereas "day to day" counts every day that is an event."""
 DAY_TO_SPAN_INFO="""    Description:
-Day to span average:
+Day_To_Span_Average:
 Event happens if the difference bettween the daily average and the average of 'span' days before and after is greater than 'Delta Temp'.
 With 'Day to day': Every day that is over counts, with 'Per Event': Event stops if the daily average gets under 'Delta Temp' for more
 than 'Min time beet. events' days."""
@@ -757,12 +866,28 @@ With 'With max' (only possible for Auto Range), an event is counted ONLY in the 
 #######################################################################################
 #                            Main programme                                           #
 #######################################################################################
-GV=GlobalVariables()
 
-if len(sys.argv)==2:
+n=len(sys.argv)
+
+d=0
+if n>3 and sys.argv[3] in ["0","1","2"]:
+    d=int(sys.argv[3])
+GV=GlobalVariables(default=d)
+
+if "-h" in sys.argv or (n>1 and sys.argv[1][0]=="-") or (n>2 and sys.argv[2][0]=="-"):
+    print("mefa_v19.x DEFAULT_FILE_NAME ANALYSE_TYPE [DATA_FORMAT (1,2 or 3)] [-h, -pe, -wm, -da, --season/--month, --shoow-plot, --save-plot, -of]")
+    print("ANALYSE_TYPE must be: "+str(ANALYSE_TYPE))
+    print("-h:\t\t\thelp\n-pe:\t\t\tper event\n-wm:\t\t\twith max\n-da\t\t\tdaily average\n--season/--month:\tperiod (only one)\n--show-plot:\t\t\tshow plot\n--save-plot:\t\tsave plot\n-of:\t\t\toutput file")
+elif n>2:
     DEFAULT_FILE_NAME=sys.argv[1]
-
-main=Window()
-if len(sys.argv)==2:
-    main.open_file()
-main.w.mainloop()
+    if sys.argv[2] not in ANALYSE_TYPE:
+        print("Error: ANALYSE_TYPE must be: "+str(ANALYSE_TYPE))
+    else:
+        analyse_from_prompt(sys.argv)
+else:
+    if n==2:
+        DEFAULT_FILE_NAME=sys.argv[1]
+    main=Window()
+    if n==2:
+        main.open_file()
+    main.w.mainloop()

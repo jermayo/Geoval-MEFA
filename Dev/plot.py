@@ -60,7 +60,7 @@ def build_plot(data_matrix, title, save_plot, extra_text="", fig_numb=1):
             plt.savefig(extra_text+str(elem)+" "+str(title)+".pdf")
     return fig_numb
 
-def plot_data(data, data_depth, title, save_plot):
+def plot_data(data, data_depth, title, save_plot, show_plot=True):
     if len(data)==1:
         return False
     data_matrix=OrderedDict()
@@ -104,7 +104,8 @@ def plot_data(data, data_depth, title, save_plot):
 
     plt.tight_layout()
     # plt.suptitle(title)
-    plt.show()
+    if show_plot:
+        plt.show()
     return True
 
 def destroy():

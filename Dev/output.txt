@@ -1,7 +1,0 @@
-					2018-08-16
-Result of analyse of data: 26208 values with 0 bad values (0.0%) (taken out)
-Temp Average: from: 8°C to: 8°C, day to day
-	8				
-					
-	pos	neg	tot		
-2016	0	0	0	
