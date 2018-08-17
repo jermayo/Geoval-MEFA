@@ -840,12 +840,6 @@ Difference over time:
 Event starts if the difference beetween a value and the value recorded "Time Diff" before is greater than "Delta Temp".
 It ends after "Max event time" so every value greater than "Delta Temp" in that period is not taken into account. The period
 allows one to look at the number of event per period of each year. """
-RAIN_CUMUL_INFO=""" Description:
-Rain cumul:
-Events starts when the rain cumul in the last "step" hours is greater than "Min Rain".
-The value of "Min Rain" is in mm/"step" (so mm/6h per default)
-Events stops when the time beetween the next time the cumul is greater than "Min Rain"
-and the last time it did is greater than "Min time beet. events"."""
 TEMP_AVERAGE_INFO="""   Description:
 Temperature average:
 Event happens if the difference beetween the daily average and the typical average is greater than "Delta Temp".
@@ -858,6 +852,12 @@ Day_To_Span_Average:
 Event happens if the difference bettween the daily average and the average of 'span' days before and after is greater than 'Delta Temp'.
 With 'Day to day': Every day that is over counts, with 'Per Event': Event stops if the daily average gets under 'Delta Temp' for more
 than 'Min time beet. events' days."""
+RAIN_CUMUL_INFO=""" Description:
+Rain cumul:
+Events starts when the rain cumul in the last "step" hours is greater than "Min Rain".
+The value of "Min Rain" is in mm/"step"
+Events stops when the time beetween the next time the cumul is greater than "Min Rain"
+and the last time it did is greater than "Min time beet. events"."""
 AUTO_RANGE_INFO="""\n\nAuto Range: automaticaly makes the analyses for all values beetween set boundaries"""
 WITH_MAX_INFO="""
 With 'With max' (only possible for Auto Range), an event is counted ONLY in the temperature corresponding to it's maximal value."""
