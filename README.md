@@ -14,7 +14,7 @@ Utilisation:
     "./compile" (depuis le dossier Dev/) -> créé un fichier mefa_vxx.x
 2.  Fichier exe: Téléchargez la dernière version mefa_vxx.x (Unix) ou mefa_vxx.exe (Windows)
 
-Syntaxe: ./mefa_vxx.x DEFAULT_FILE_NAME ANALYSE_TYPE [DATA_FORMAT (1,2 or 3)] [-h, -pe, -wm, -da, --season/--month, --show-plot, --save-plot, -of]")
+Syntaxe: ./mefa_vxx.x FILE_NAME ANALYSE_TYPE [DATA_FORMAT (0,1 or 2)] [-h, -pe, -wm, -da, --season/--month, --show-plot, --save-plot, -of]")
 Type d'analyse: "Data_Cleaning", "Difference_Time", "Temp_Average", "Day_To_Span_Average", "Rain_Cumul"
 Format de donnée: voir programme GUI, sous "Change Load Param"
 -h:			        help

@@ -789,8 +789,7 @@ def analyse_from_prompt(argv):
         min_rain=6
         min_time_beetween_event=15
         min, max = 6, 24
-        if go:
-            text, data=ra.rain_cumul(datas, min, max, min_time_beetween_event, min_rain, period)
+        text, data=ra.rain_cumul(datas, min, max, min_time_beetween_event, min_rain, period)
 
     res_text=title+"\n"+text
     if "-of" in argv:
@@ -875,7 +874,7 @@ if n>3 and sys.argv[3] in ["0","1","2"]:
 GV=GlobalVariables(default=d)
 
 if "-h" in sys.argv or (n>1 and sys.argv[1][0]=="-") or (n>2 and sys.argv[2][0]=="-"):
-    print("mefa_v19.x DEFAULT_FILE_NAME ANALYSE_TYPE [DATA_FORMAT (1,2 or 3)] [-h, -pe, -wm, -da, --season/--month, --shoow-plot, --save-plot, -of]")
+    print("mefa_v19.x FILE_NAME ANALYSE_TYPE [DATA_FORMAT (0,1 or 2)] [-h, -pe, -wm, -da, --season/--month, --show-plot, --save-plot, -of]")
     print("ANALYSE_TYPE must be: "+str(ANALYSE_TYPE))
     print("-h:\t\t\thelp\n-pe:\t\t\tper event\n-wm:\t\t\twith max\n-da\t\t\tdaily average\n--season/--month:\tperiod (only one)\n--show-plot:\t\t\tshow plot\n--save-plot:\t\tsave plot\n-of:\t\t\toutput file")
 elif n>2:
