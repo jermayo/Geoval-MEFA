@@ -41,7 +41,7 @@ Dossiers:
 
 
 Versions:
-Dev: 1.9.4 (?), Fixed: 1.9.3, Exe: Linux: 1.9.3 mefa_v19.x, Windows: 1.9.1 mefa_v19.exe
+Dev: 1.9.4 (?), Fixed: 1.9.3, Exe: Linux: 1.9.3 mefa_v19.x, Windows: 1.9.3 mefa_v19.exe
 
 
 
