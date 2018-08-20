@@ -12,19 +12,19 @@ then
     echo "./automate STATION [DATA FOLDER] [EXE FOLDER] [ANALYSE TYPE] [FILE FORMAT] [DEFAULT FORMAT]"
     exit
 fi
-if [ $2 <> false ]
+if [ $2 ]
 then
     DATA_FOLDER="../"$2
-    if [ $3 <> false ]
+    if [ $3 ]
     then
         EXE_FOLDER="../"$3
-        if [ $4 <> false ]
+        if [ $4 ]
         then
             ANALYSE_TYPE=$4
-            if [ $5 <> false ]
+            if [ $5 ]
             then
                 FILE_FORMAT=$5
-                if [ $6 <> false ]
+                if [ $6 ]
                 then
                     DEFAULT_FORMAT=$6
                 fi
@@ -37,40 +37,34 @@ echo "Data File: "$DATA_FOLDER/$STATION$FILE_FORMAT
 echo "Exe File: "$EXE_FOLDER/mefa_v??.x
 echo "Analyse Type: "$ANALYSE_TYPE
 echo "Creating temporary folder"
-TEMP_FOLDER="."$STATION"_TEMP"
+TEMP_FOLDER="."$STATION"_"$ANALYSE_TYPE"_TEMP"
 mkdir $TEMP_FOLDER
 cd $TEMP_FOLDER
 
 echo "Executing programme MEFA"
 echo "########################"
 
-$EXE_FOLDER/mefa_v??.x $DATA_FOLDER/$STATION$FILE_FORMAT $ANALYSE_TYPE $DEFAULT_FORMAT -pe -wm --save-plot --season
+ARGU1=pe
+ARGU2=wm
+$EXE_FOLDER/mefa_v??.x $DATA_FOLDER/$STATION$FILE_FORMAT $ANALYSE_TYPE $DEFAULT_FORMAT -$ARGU1 -$ARGU2 --save-plot --season --year
 #[-h, -pe, -wm, -da, --season/--month, --show-plot, --save-plot, -of]
 
 echo "########################"
 echo "Creating PDF"
 
-FLAG=1
-if [ $FLAG == 1 ]
+if [ $ARGU1 ]
 then
-    for f in Winter*; do
-        [ -e "$f" ] && pdfunite Winter* Spring* Summer* Autumn* "../"$STATION"_"$ANALYSE_TYPE".pdf" || FLAG=2
-        break
-    done
-fi
-if [ $FLAG == 2 ]
+    if [ $ARGU2 ]
+    then
+        pdfunite *.pdf ../$STATION"_"$ANALYSE_TYPE"_"$ARGU1"_"$ARGU2.pdf
+    else
+        pdfunite *.pdf ../$STATION"_"$ANALYSE_TYPE"_"$ARGU1.pdf
+    fi
+elif [ $ARGU2 ]
 then
-    for f in Year*; do
-        [ -e "$f" ] && pdfunite Year* "../"$STATION"_"$ANALYSE_TYPE".pdf" || FLAG=3
-        break
-    done
-fi
-if [ $FLAG == 3 ]
-then
-    for f in Jan*; do
-        [ -e "$f" ] && pdfunite Jan* Feb* Mar* Apr* May* Jun* Jul* Aug* Sep* Oct* Nov* Dec* "../"$STATION"_"$ANALYSE_TYPE".pdf" || echo "Error, no data found"
-        break
-    done
+    pdfunite *.pdf ../$STATION"_"$ANALYSE_TYPE"_"$ARGU2.pdf
+else
+    pdfunite *.pdf ../$STATION"_"$ANALYSE_TYPE.pdf
 fi
 
 

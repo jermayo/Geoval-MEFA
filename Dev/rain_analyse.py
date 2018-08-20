@@ -14,7 +14,7 @@ from temp_analyse import date_beetween
 #######################################################################################
 ########################## RAIN CUMUL #################################################
 
-def rain_cumul(datas, min_step, max_step, min_time_beetween_event, min_rain, period):
+def rain_cumul(datas, min_step, max_step, min_time_beetween_event, min_rain, period, show_info=False):
     min_time_beetween_event=datetime.timedelta(minutes=min_time_beetween_event)
     min_step=max(datetime.timedelta(hours=min_step), datas[1]["date"]-datas[0]["date"])
     max_step=datetime.timedelta(hours=max_step+1)
@@ -31,7 +31,13 @@ def rain_cumul(datas, min_step, max_step, min_time_beetween_event, min_rain, per
     step=datetime.timedelta(hours=1)
     events=OrderedDict()
     first_date=datetime.datetime.max
-    for i in range(len(datas)):
+    n=len(datas)
+    incr=0
+    for i in range(n):
+        if show_info:
+            if i/n>=incr:
+                print(" > Analysing data   {:.0f}%".format(incr*100), end="\r")
+                incr+=0.01
         if datas[i]["date"]<first_date:
             first_date=datas[i]["date"]
 
@@ -70,7 +76,8 @@ def rain_cumul(datas, min_step, max_step, min_time_beetween_event, min_rain, per
                 delta_t+=step
             j-=1
 
-
+    if show_info:
+        print(" > Analysing data  {:.0f}%".format(100))
     text="Time Span: (Hours)\t"
     for year in events:
         for delta_t in events[year]:

@@ -45,7 +45,7 @@ def get_data(sub_data_matrix, sub_data, lim_list, limit, year):
 
 def build_plot(data_matrix, title, save_plot, extra_text="", fig_numb=1):
     for elem in data_matrix:
-        plt.figure(title+str(fig_numb), figsize=(15,5))
+        plt.figure(extra_text+str(elem)+str(title)[:-2]+str(fig_numb), figsize=(15,5))
         plt.title(extra_text+str(elem))
         color=0
         for lim in data_matrix[elem]:
@@ -57,7 +57,7 @@ def build_plot(data_matrix, title, save_plot, extra_text="", fig_numb=1):
         plt.legend(loc='best', borderaxespad=0.)#(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
         fig_numb+=1
         if save_plot:
-            plt.savefig(extra_text+str(elem)+" "+str(title)+".pdf")
+            plt.savefig(extra_text+str(elem)+str(title)[:-2]+".pdf")
     return fig_numb
 
 def plot_data(data, data_depth, title, save_plot, show_plot=True):

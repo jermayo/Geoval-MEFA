@@ -64,7 +64,7 @@ def create_data(line, column, complete_date):
             return data, False
         return data, True
     except:
-        messagebox.showerror("Error", "Data could not be retrieved")
+        return False, "Data could not be retrieved"
 
 
 #File Reading and Writting
@@ -114,6 +114,8 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8", show_info=Fa
         #Main data input
         if flag_1 and line!=[]:
             new_data, flag = create_data(line, column, complete_date)
+            if not new_data:
+                return False, False, flag
             if flag:
                 if len(datas)==0:
                     datas.append(new_data)
@@ -148,10 +150,11 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8", show_info=Fa
 
         if show_info:
             if show_info/len_file_lines>state:
-                print("{:.0f}%".format(state*100))
-                state+=0.1
+                print(" > Opening file     {:.0f}%".format(state*100), end="\r")
+                state+=0.01
             show_info+=1
-
+    if show_info:
+        print(" > Opening file    {:.0f}%".format(100))
     if len(datas)==0:
         return False, False, "Data could not be retrieved"
     log="{} values with {} bad values ({:.1f}%) (taken out)".format(len(datas), bad_data, bad_data/len(datas)*100)
@@ -703,105 +706,120 @@ class Window():
 ###################### NO GUI #########################################################
 
 def analyse_from_prompt(argv):
-    print("Opening file ...")
+    print(" > Opening file ...", end="\r")
     analyse_type=argv[2]
     per_event, with_max, save_plot, show_plot= False, False, False, False
-
+    period_list=[]
     if "-pe" in argv:
         per_event=True
     if "-wm" in argv:
         with_max=True
-    period=1
+    if "--year" in argv:
+        period_list.append(1)
     if "--season" in argv:
-        period=2
+        period_list.append(2)
     if "--month" in argv:
-        period=3
+        period_list.append(3)
     if "--save-plot" in argv:
         save_plot=True
     if "--show-plot" in argv:
         show_plot=True
+
+    if period_list==[]:
+        print(" > Error: No period given")
+        return
 
     datas, read_log, message=read_file(DEFAULT_FILE_NAME, False, False, file_encoding=FILE_ENCODING, show_info=True)
     if message:
         print(message)
         return
 
-    print("Analysing data ...")
+
 
     plot_depth=False
     title=analyse_type+": "
-    if analyse_type=="Data_Cleaning":
-        if "-da" in argv:
-            text=ta.clean_daily_average(datas)
-        else:
-            text=""
-            for data in datas:
-                text+="\n"
-                for elem in data:
-                    text+=str(data[elem])+"\t\t"
 
-    elif analyse_type=="Difference_Time":
-        plot_depth=4
-        delta_t=datetime.timedelta(hours=24)
-        time_max_event=datetime.timedelta(hours=24)
-        T_min, T_max=5, 15
-        title+="delta t: {}, event time max: {}, from: {}°C to: {}°C".format(delta_t, time_max_event, T_min, T_max)
-        if with_max:
-            title+=" with max limit"
-        text, data=ta.diff_time(datas, delta_t, time_max_event, period, T_min, T_max, with_max)
+    first=True
+    for period in period_list:
+        print(" > Analysis for period: "+str(["Year", "Season", "Month"][period-1]))
+        print(" > Analysing data ...", end="\r")
+        if analyse_type=="Data_Cleaning" and not first:
+            if "-da" in argv:
+                text=ta.clean_daily_average(datas, show_info=True)
+            else:
+                text=""
+                for data in datas:
+                    text+="\n"
+                    for elem in data:
+                        text+=str(data[elem])+"\t\t"
+                print("")
+
+        elif analyse_type=="Difference_Time":
+            plot_depth=4
+            delta_t=datetime.timedelta(hours=24)
+            time_max_event=datetime.timedelta(hours=24)
+            T_min, T_max=5, 15
+            title+="delta t: {}, event time max: {}, from: {}°C to: {}°C".format(delta_t, time_max_event, T_min, T_max)
+            if with_max:
+                title+=" with max limit"
+            text, data=ta.diff_time(datas, delta_t, time_max_event, period, T_min, T_max, with_max, show_info=True)
 
 
-    elif analyse_type=="Temp_Average":
-        plot_depth=3
-        T_min, T_max= 5, 10
-        title+="from: {}°C to: {}°C".format(T_min, T_max)
-        if with_max:
-            title+=" with max limit"
-        if per_event:
-            title+=", per event"
-        else:
-            title+=", day to day"
-        text, data=ta.temp_average(datas, per_event, T_min, T_max, with_max)
+        elif analyse_type=="Temp_Average" and not first:
+            plot_depth=3
+            T_min, T_max= 5, 10
+            title+="from: {}°C to: {}°C".format(T_min, T_max)
+            if with_max:
+                title+=" with max limit"
+            if per_event:
+                title+=", per event"
+            else:
+                title+=", day to day"
+            text, data=ta.temp_average(datas, per_event, T_min, T_max, with_max, show_info=True)
 
-    elif analyse_type=="Day_To_Span_Average":
-        plot_depth=4
-        span=30
-        days=2
-        T_min, T_max=2,15
-        title+="span: {} days, min time beet. events: {} days,  from: {}°C to: {}°C".format(span, days, T_min, T_max)
-        if with_max:
-            title+=" with max limit"
-        if per_event:
-            title+=", per event"
-        else:
-            title+=", day to day"
-        text, data=ta.day_to_span_av(datas, span, T_min, T_max, with_max, per_event, days, period)
+        elif analyse_type=="Day_To_Span_Average":
+            plot_depth=4
+            span=30
+            days=2
+            T_min, T_max=2,15
+            title+="span: {} days, min time beet. events: {} days,  from: {}°C to: {}°C".format(span, days, T_min, T_max)
+            if with_max:
+                title+=" with max limit"
+            if per_event:
+                title+=", per event"
+            else:
+                title+=", day to day"
+            text, data=ta.day_to_span_av(datas, span, T_min, T_max, with_max, per_event, days, period, show_info=True)
 
-    elif analyse_type=="Rain_Cumul":
-        plot_depth=3
-        min_rain=6
-        min_time_beetween_event=15
-        T_min, T_max = 6, 24
-        text, data=ra.rain_cumul(datas, T_min, T_max, min_time_beetween_event, min_rain, period)
+        elif analyse_type=="Rain_Cumul":
+            plot_depth=3
+            min_rain=6
+            min_time_beetween_event=15
+            T_min, T_max = 6, 24
+            text, data=ra.rain_cumul(datas, T_min, T_max, min_time_beetween_event, min_rain, period, show_info=True)
 
-    res_text=title+"\n"+text
-    if "-of" in argv:
-        if not file_write("output.txt",res_text, read_log):
-            print("Error: File not found (404)")
-            return
-        else:
-            print("See file 'output.txt'")
+        res_text=title+"\n"+text
+        if "-of" in argv:
+            if not file_write("output.txt",res_text, read_log):
+                print(" > Error: File not found (404)")
+                return
+            else:
+                print(" > See file 'output.txt'")
 
-    if (show_plot or save_plot) and plot_depth:
-        for i in range(TAKE_OUT_FIRST):
-            data.pop(min([i for i in data]))
-        for i in range(TAKE_OUT_LAST):
-            data.pop(max([i for i in data]))
+        if (show_plot or save_plot) and plot_depth:
+            for i in range(TAKE_OUT_FIRST):
+                data.pop(min([i for i in data]))
+            for i in range(TAKE_OUT_LAST):
+                data.pop(max([i for i in data]))
 
-        if not plot.plot_data(data, plot_depth, title, save_plot, show_plot=show_plot):
-            print("Warning: Cannot plot with only one year.")
+            if not first:
+                plot.destroy()
 
-    print("Analyse ended")
+            if not plot.plot_data(data, plot_depth, title, save_plot, show_plot=show_plot):
+                print(" > Warning: Cannot plot with only one year.")
+        first=False
+
+    print(" > Analyse ended")
 #######################################################################################
 #                      Global Constant                                                #
 #######################################################################################
@@ -871,10 +889,16 @@ if n>3 and sys.argv[3] in ["0","1","2"]:
     d=int(sys.argv[3])
 GV=GlobalVariables(default=d)
 
-if "-h" in sys.argv or (n>1 and sys.argv[1][0]=="-") or (n>2 and sys.argv[2][0]=="-"):
-    print("mefa_v19.x FILE_NAME ANALYSE_TYPE [DATA_FORMAT (0,1 or 2)] [-h, -pe, -wm, -da, --season/--month, --show-plot, --save-plot, -of]")
+flag=False
+argument_list=["-h", "-pe", "-wm", "-da", "--year", "--season", "--month", "--show-plot", "--save-plot", "-of"]
+for i in sys.argv:
+    if i[0]=="-" and i not in argument_list:
+        print("Error: '{}' not a known argument\nFormat must be:\n".format(i))
+        flag=True
+if "-h" in sys.argv or (n>1 and sys.argv[1][0]=="-") or (n>2 and sys.argv[2][0]=="-") or flag:
+    print("mefa_v19.x FILE_NAME ANALYSE_TYPE [DATA_FORMAT (0,1 or 2)] [-h, -pe, -wm, -da, --year/--season/--month, --show-plot, --save-plot, -of]\n")
     print("ANALYSE_TYPE must be: "+str(ANALYSE_TYPE))
-    print("-h\t\t\thelp\n-pe\t\t\tper event\n-wm\t\t\twith max\n-da\t\t\tdaily average\n--season/--month:\tperiod (only one)\n--show-plot\t\t\tshow plot\n--save-plot\t\tsave plot\n-of\t\t\toutput file")
+    print("\nArguments:\n-h\t\t\t help\n-pe\t\t\t per event\n-wm\t\t\t with max\n-da\t\t\t daily average\n--year/--season/--month: period (can be more than one)\n--show-plot\t\t show plot\n--save-plot\t\t save plot\n-of\t\t\t output file")
 elif n>2:
     DEFAULT_FILE_NAME=sys.argv[1]
     if sys.argv[2] not in ANALYSE_TYPE:
