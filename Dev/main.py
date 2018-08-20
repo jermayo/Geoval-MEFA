@@ -150,11 +150,11 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8", show_info=Fa
 
         if show_info:
             if show_info/len_file_lines>state:
-                print(" > Opening file     {:.0f}%".format(state*100), end="\r")
+                print("  > Opening file     {:.0f}%".format(state*100), end="\r")
                 state+=0.01
             show_info+=1
     if show_info:
-        print(" > Opening file    {:.0f}%".format(100))
+        print("  > Opening file    {:.0f}%".format(100))
     if len(datas)==0:
         return False, False, "Data could not be retrieved"
     log="{} values with {} bad values ({:.1f}%) (taken out)".format(len(datas), bad_data, bad_data/len(datas)*100)
@@ -706,7 +706,7 @@ class Window():
 ###################### NO GUI #########################################################
 
 def analyse_from_prompt(argv):
-    print(" > Opening file ...", end="\r")
+    print("  > Opening file ...", end="\r")
     analyse_type=argv[2]
     per_event, with_max, save_plot, show_plot= False, False, False, False
     period_list=[]
@@ -726,7 +726,7 @@ def analyse_from_prompt(argv):
         show_plot=True
 
     if period_list==[]:
-        print(" > Error: No period given")
+        print("  > Error: No period given")
         return
 
     datas, read_log, message=read_file(DEFAULT_FILE_NAME, False, False, file_encoding=FILE_ENCODING, show_info=True)
@@ -741,8 +741,8 @@ def analyse_from_prompt(argv):
 
     first=True
     for period in period_list:
-        print(" > Analysis for period: "+str(["Year", "Season", "Month"][period-1]))
-        print(" > Analysing data ...", end="\r")
+        print("  > Analysis for period: "+str(["Year", "Season", "Month"][period-1]))
+        print("  > Analysing data ...", end="\r")
         if analyse_type=="Data_Cleaning" and not first:
             if "-da" in argv:
                 text=ta.clean_daily_average(datas, show_info=True)
@@ -765,7 +765,7 @@ def analyse_from_prompt(argv):
             text, data=ta.diff_time(datas, delta_t, time_max_event, period, T_min, T_max, with_max, show_info=True)
 
 
-        elif analyse_type=="Temp_Average" and not first:
+        elif analyse_type=="Temp_Average" and first:
             plot_depth=3
             T_min, T_max= 5, 10
             title+="from: {}°C to: {}°C".format(T_min, T_max)
@@ -801,10 +801,10 @@ def analyse_from_prompt(argv):
         res_text=title+"\n"+text
         if "-of" in argv:
             if not file_write("output.txt",res_text, read_log):
-                print(" > Error: File not found (404)")
+                print("  > Error: File not found (404)")
                 return
             else:
-                print(" > See file 'output.txt'")
+                print("  > See file 'output.txt'")
 
         if (show_plot or save_plot) and plot_depth:
             for i in range(TAKE_OUT_FIRST):
@@ -816,10 +816,10 @@ def analyse_from_prompt(argv):
                 plot.destroy()
 
             if not plot.plot_data(data, plot_depth, title, save_plot, show_plot=show_plot):
-                print(" > Warning: Cannot plot with only one year.")
+                print("  > Warning: Cannot plot with only one year.")
         first=False
 
-    print(" > Analyse ended")
+    print("  > Analyse ended")
 #######################################################################################
 #                      Global Constant                                                #
 #######################################################################################

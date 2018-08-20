@@ -129,11 +129,11 @@ def clean_daily_average(datas, show_info=False):
         if show_info:
             count+=1
             if count/n>=incr:
-                print(" > Analysing data  {:.0f}%".format(incr*100), end="\r")
+                print("  > Analysing data  {:.0f}%".format(incr*100), end="\r")
                 incr+=0.01
         text+="{}\t{:.3f}\t{:.3f}\n".format(day,days[day]["temp"],days[day]["rain"])
     if show_info:
-        print(" > Analysing data  {:.0f}%".format(100))
+        print("  > Analysing data  {:.0f}%".format(100))
     return text
 
 
@@ -159,7 +159,7 @@ def diff_time(datas, delta_t, time_max_event, period, min, max, max_limit, show_
     for i in range(n):
         if show_info:
             if i/n>=incr:
-                print(" > Analysing data  {:.0f}%".format(incr*100), end="\r")
+                print("  > Analysing data  {:.0f}%".format(incr*100), end="\r")
                 incr+=0.01
         year=datas[i]["date"].year
         event_list=check_new_year(year, event_list, min, max, period_list)
@@ -174,7 +174,7 @@ def diff_time(datas, delta_t, time_max_event, period, min, max, max_limit, show_
         if j>=len(datas)-1:
             break
     if show_info:
-        print(" > Analysing data  {:.0f}%".format(100))
+        print("  > Analysing data  {:.0f}%".format(100))
     event_list=check_event_last(event_list, max_limit)
 
     return build_text(event_list, min, max, period_list=period_list), event_list
@@ -228,7 +228,7 @@ def temp_average(datas, analy_type, min, max, max_limit, show_info=False):
         if show_info:
             count+=1
             if count/n>=incr:
-                print(" > Analysing data  {:.0f}%".format(incr*100), end="\r")
+                print("  > Analysing data  {:.0f}%".format(incr*100), end="\r")
                 incr+=0.01
 
         day_numb=(day-(datetime.datetime(day.year, 1, 1)).date()).days+1
@@ -264,7 +264,7 @@ def temp_average(datas, analy_type, min, max, max_limit, show_info=False):
             events[year][temp].pop("max", None)
 
     if show_info:
-        print(" > Analysing data  {:.0f}%".format(100))
+        print("  > Analysing data  {:.0f}%".format(100))
     return build_text(events, min, max), events
 
 def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event, period, show_info=False):
@@ -289,7 +289,7 @@ def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event
         if show_info:
             count+=1
             if count/n>=incr:
-                print(" > Analysing data  {:.0f}%".format(incr*100), end="\r")
+                print("  > Analysing data  {:.0f}%".format(incr*100), end="\r")
                 incr+=0.01
 
         year=day.year
@@ -312,7 +312,7 @@ def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event
         d_temp=days[day]["temp"]-average
         events[year]=check_event(events[year], d_temp, period_list, day, days_beet_event, max_limit, analy_type)
     if show_info:
-        print(" > Analysing data  {:.0f}%".format(100))
+        print("  > Analysing data  {:.0f}%".format(100))
     events=check_event_last(events, max_limit)
 
     return build_text(events, min, max, period_list=period_list), events

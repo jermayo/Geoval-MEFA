@@ -36,7 +36,7 @@ def rain_cumul(datas, min_step, max_step, min_time_beetween_event, min_rain, per
     for i in range(n):
         if show_info:
             if i/n>=incr:
-                print(" > Analysing data   {:.0f}%".format(incr*100), end="\r")
+                print("  > Analysing data   {:.0f}%".format(incr*100), end="\r")
                 incr+=0.01
         if datas[i]["date"]<first_date:
             first_date=datas[i]["date"]
@@ -77,7 +77,7 @@ def rain_cumul(datas, min_step, max_step, min_time_beetween_event, min_rain, per
             j-=1
 
     if show_info:
-        print(" > Analysing data  {:.0f}%".format(100))
+        print("  > Analysing data  {:.0f}%".format(100))
     text="Time Span: (Hours)\t"
     for year in events:
         for delta_t in events[year]:
