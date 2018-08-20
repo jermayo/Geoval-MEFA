@@ -743,7 +743,7 @@ def analyse_from_prompt(argv):
     for period in period_list:
         print("  > Analysis for period: "+str(["Year", "Season", "Month"][period-1]))
         print("  > Analysing data ...", end="\r")
-        if analyse_type=="Data_Cleaning" and not first:
+        if analyse_type=="Data_Cleaning" and first:
             if "-da" in argv:
                 text=ta.clean_daily_average(datas, show_info=True)
             else:
