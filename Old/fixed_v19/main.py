@@ -152,17 +152,6 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8", show_info=Fa
                 state+=0.1
             show_info+=1
 
-    if last_year-first_year>1:
-        if show_info:
-            print("Cleaning data...")
-        while datas[0]["date"].year-first_year<TAKE_OUT_FIRST:
-            datas.pop(0)
-
-        while last_year-datas[-1]["date"].year<TAKE_OUT_LAST:
-            datas.pop(-1)
-        if show_info:
-            print("Done!")
-
     if len(datas)==0:
         return False, False, "Data could not be retrieved"
     log="{} values with {} bad values ({:.1f}%) (taken out)".format(len(datas), bad_data, bad_data/len(datas)*100)
@@ -395,6 +384,10 @@ class Window():
         self.load_end()
 
         if self.plot_toggle.get() and plot_depth:
+            for i in range(TAKE_OUT_FIRST):
+                data.pop(min([i for i in data]))
+            for i in range(TAKE_OUT_LAST):
+                data.pop(max([i for i in data]))
             if not plot.plot_data(data, plot_depth, title, self.save_plot_toggle.get()):
                 messagebox.showwarning("Warning", "Cannot plot with only one year.")
 
@@ -751,45 +744,45 @@ def analyse_from_prompt(argv):
         plot_depth=4
         delta_t=datetime.timedelta(hours=24)
         time_max_event=datetime.timedelta(hours=24)
-        min, max=5, 15
-        title+="delta t: {}, event time max: {}, from: {}°C to: {}°C".format(delta_t, time_max_event, min, max)
+        T_min, T_max=5, 15
+        title+="delta t: {}, event time max: {}, from: {}°C to: {}°C".format(delta_t, time_max_event, T_min, T_max)
         if with_max:
             title+=" with max limit"
-        text, data=ta.diff_time(datas, delta_t, time_max_event, period, min, max, with_max)
+        text, data=ta.diff_time(datas, delta_t, time_max_event, period, T_min, T_max, with_max)
 
 
     elif analyse_type=="Temp_Average":
         plot_depth=3
-        min, max= 5, 10
-        title+="from: {}°C to: {}°C".format(min, max)
+        T_min, T_max= 5, 10
+        title+="from: {}°C to: {}°C".format(T_min, T_max)
         if with_max:
             title+=" with max limit"
         if per_event:
             title+=", per event"
         else:
             title+=", day to day"
-        text, data=ta.temp_average(datas, per_event, min, max, with_max)
+        text, data=ta.temp_average(datas, per_event, T_min, T_max, with_max)
 
     elif analyse_type=="Day_To_Span_Average":
         plot_depth=4
         span=30
         days=2
-        min, max=2,15
-        title+="span: {} days, min time beet. events: {} days,  from: {}°C to: {}°C".format(span, days, min, max)
+        T_min, T_max=2,15
+        title+="span: {} days, min time beet. events: {} days,  from: {}°C to: {}°C".format(span, days, T_min, T_max)
         if with_max:
             title+=" with max limit"
         if per_event:
             title+=", per event"
         else:
             title+=", day to day"
-        text, data=ta.day_to_span_av(datas, span, min, max, with_max, per_event, days, period)
+        text, data=ta.day_to_span_av(datas, span, T_min, T_max, with_max, per_event, days, period)
 
     elif analyse_type=="Rain_Cumul":
         plot_depth=3
         min_rain=6
         min_time_beetween_event=15
-        min, max = 6, 24
-        text, data=ra.rain_cumul(datas, min, max, min_time_beetween_event, min_rain, period)
+        T_min, T_max = 6, 24
+        text, data=ra.rain_cumul(datas, T_min, T_max, min_time_beetween_event, min_rain, period)
 
     res_text=title+"\n"+text
     if "-of" in argv:
@@ -800,6 +793,11 @@ def analyse_from_prompt(argv):
             print("See file 'output.txt'")
 
     if (show_plot or save_plot) and plot_depth:
+        for i in range(TAKE_OUT_FIRST):
+            data.pop(min([i for i in data]))
+        for i in range(TAKE_OUT_LAST):
+            data.pop(max([i for i in data]))
+
         if not plot.plot_data(data, plot_depth, title, save_plot, show_plot=show_plot):
             print("Warning: Cannot plot with only one year.")
 
@@ -840,12 +838,6 @@ Difference over time:
 Event starts if the difference beetween a value and the value recorded "Time Diff" before is greater than "Delta Temp".
 It ends after "Max event time" so every value greater than "Delta Temp" in that period is not taken into account. The period
 allows one to look at the number of event per period of each year. """
-RAIN_CUMUL_INFO=""" Description:
-Rain cumul:
-Events starts when the rain cumul in the last "step" hours is greater than "Min Rain".
-The value of "Min Rain" is in mm/"step" (so mm/6h per default)
-Events stops when the time beetween the next time the cumul is greater than "Min Rain"
-and the last time it did is greater than "Min time beet. events"."""
 TEMP_AVERAGE_INFO="""   Description:
 Temperature average:
 Event happens if the difference beetween the daily average and the typical average is greater than "Delta Temp".
@@ -858,6 +850,12 @@ Day_To_Span_Average:
 Event happens if the difference bettween the daily average and the average of 'span' days before and after is greater than 'Delta Temp'.
 With 'Day to day': Every day that is over counts, with 'Per Event': Event stops if the daily average gets under 'Delta Temp' for more
 than 'Min time beet. events' days."""
+RAIN_CUMUL_INFO=""" Description:
+Rain cumul:
+Events starts when the rain cumul in the last "step" hours is greater than "Min Rain".
+The value of "Min Rain" is in mm/"step"
+Events stops when the time beetween the next time the cumul is greater than "Min Rain"
+and the last time it did is greater than "Min time beet. events"."""
 AUTO_RANGE_INFO="""\n\nAuto Range: automaticaly makes the analyses for all values beetween set boundaries"""
 WITH_MAX_INFO="""
 With 'With max' (only possible for Auto Range), an event is counted ONLY in the temperature corresponding to it's maximal value."""
@@ -876,7 +874,7 @@ GV=GlobalVariables(default=d)
 if "-h" in sys.argv or (n>1 and sys.argv[1][0]=="-") or (n>2 and sys.argv[2][0]=="-"):
     print("mefa_v19.x FILE_NAME ANALYSE_TYPE [DATA_FORMAT (0,1 or 2)] [-h, -pe, -wm, -da, --season/--month, --show-plot, --save-plot, -of]")
     print("ANALYSE_TYPE must be: "+str(ANALYSE_TYPE))
-    print("-h:\t\t\thelp\n-pe:\t\t\tper event\n-wm:\t\t\twith max\n-da\t\t\tdaily average\n--season/--month:\tperiod (only one)\n--show-plot:\t\t\tshow plot\n--save-plot:\t\tsave plot\n-of:\t\t\toutput file")
+    print("-h\t\t\thelp\n-pe\t\t\tper event\n-wm\t\t\twith max\n-da\t\t\tdaily average\n--season/--month:\tperiod (only one)\n--show-plot\t\t\tshow plot\n--save-plot\t\tsave plot\n-of\t\t\toutput file")
 elif n>2:
     DEFAULT_FILE_NAME=sys.argv[1]
     if sys.argv[2] not in ANALYSE_TYPE:

@@ -14,7 +14,7 @@ def lin_reg(x, y):
 
 def get_points(x, y):
     a,b=lin_reg(x,y)
-    return a,[x[0], x[-1]], [a*x[0]+b, a*x[1]+b]
+    return a,[x[0], x[-1]], [a*x[0]+b, a*x[-1]+b]
 
 def get_data(sub_data_matrix, sub_data, lim_list, limit, year):
 
@@ -92,7 +92,6 @@ def plot_data(data, data_depth, title, save_plot, show_plot=True):
     #         column+=1
     # elif data_depth==3:
     #     build_plot(ax, data_matrix, rows, columns)
-
 
     if data_depth==4:
         fig_numb=1
