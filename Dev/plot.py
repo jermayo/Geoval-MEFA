@@ -28,24 +28,11 @@ def get_data(sub_data_matrix, sub_data, lim_list, limit, year):
 
     return sub_data_matrix
 
-# def build_plot(ax, data_matrix, total_row, total_column, column=0, extra_text=""):
-#     row=0
-#     for elem in data_matrix:
-#         for lim in data_matrix[elem]:
-#             if total_row==1 and total_column==1:
-#                 n=ax
-#             elif total_column==1 or total_row==1:
-#                 n=ax[row]
-#             else:
-#                 n=ax[row][column]
-#             n.set_title(extra_text+str(elem))
-#             n.plot(data_matrix[elem][lim]["xaxis"], data_matrix[elem][lim]["yaxis"], label=str(lim))
-#             n.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-#         row+=1
 
 def build_plot(data_matrix, title, save_plot, extra_text="", fig_numb=1):
     for elem in data_matrix:
         plt.figure(extra_text+str(elem)+str(title)[:-2]+str(fig_numb), figsize=(15,5))
+
         plt.title(extra_text+str(elem))
         color=0
         for lim in data_matrix[elem]:
@@ -54,6 +41,8 @@ def build_plot(data_matrix, title, save_plot, extra_text="", fig_numb=1):
             plt.plot(x,y, label="{} a:{:.4f}".format(lim,a), color="C"+str(color%10))
             color+=1
 
+        x1,x2,y1,y2 = plt.axis()
+        plt.axis((x1,x2,0,y2))
         plt.legend(loc='best', borderaxespad=0.)#(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
         fig_numb+=1
         if save_plot:
@@ -83,16 +72,6 @@ def plot_data(data, data_depth, title, save_plot, show_plot=True):
         for i in data_matrix:
             rows=len(data_matrix[i])
             break
-
-    # fig, ax = plt.subplots(nrows=rows, ncols=columns)
-    # if data_depth==4:
-    #     column=0
-    #     for period in data_matrix:
-    #         build_plot(ax, data_matrix[period], rows, columns, column=column, extra_text=str(period)+" ")
-    #         column+=1
-    # elif data_depth==3:
-    #     build_plot(ax, data_matrix, rows, columns)
-
     if data_depth==4:
         fig_numb=1
         for period in data_matrix:

@@ -323,26 +323,26 @@ class Window():
             delta_t=datetime.timedelta(hours=int(self.Sb_tweak2.get()))
             time_max_event=datetime.timedelta(hours=int(self.Sb_tweak3.get()))
             period=self.period.get()
-            go, min, max, max_limit=self.find_min_max(1, 3, 5)
-            title+="delta t: {}, event time max: {}, from: {}°C to: {}°C".format(delta_t, time_max_event, min, max)
+            go, T_min, T_max, max_limit=self.find_min_max(1, 3, 5)
+            title+="delta t: {}, event time max: {}, from: {}°C to: {}°C".format(delta_t, time_max_event, T_min, T_max)
             if max_limit:
                 title+=" with max limit"
             #title+="\n"
             if go:
-                text, data=ta.diff_time(GV.datas, delta_t, time_max_event, period, min, max, max_limit)
+                text, data=ta.diff_time(GV.datas, delta_t, time_max_event, period, T_min, T_max, max_limit)
 
 
         elif analyse=="Temp_Average":
             plot_depth=3
             period_type=self.analy_type.get()
-            go, min, max, max_limit=self.find_min_max(0, 2, 4)
-            title+="from: {}°C to: {}°C".format(min, max)
+            go, T_min, T_max, max_limit=self.find_min_max(0, 2, 4)
+            title+="from: {}°C to: {}°C".format(T_min, T_max)
             if period_type:
                 title+=", per event"
             else:
                 title+=", day to day"
             if go:
-                text, data=ta.temp_average(GV.datas, period_type, min, max, max_limit)
+                text, data=ta.temp_average(GV.datas, period_type, T_min, T_max, max_limit)
 
         elif analyse=="Day_To_Span_Average":
             plot_depth=4
@@ -350,8 +350,8 @@ class Window():
             days=int(self.Sb_tweak2.get())
             analy_type=self.analy_type.get()
             period=self.period.get()
-            go, min, max, max_limit=self.find_min_max(1, 3, 5)
-            title+="span: {} days, min time beet. events: {} days,  from: {}°C to: {}°C".format(span, days, min, max)
+            go, T_min, T_max, max_limit=self.find_min_max(1, 3, 5)
+            title+="span: {} days, min time beet. events: {} days,  from: {}°C to: {}°C".format(span, days, T_min, T_max)
             if max_limit:
                 title+=" with max limit"
             if analy_type:
@@ -359,16 +359,16 @@ class Window():
             else:
                 title+=", day to day"
             if go:
-                text, data=ta.day_to_span_av(GV.datas, span, min, max, max_limit, analy_type, days, period)
+                text, data=ta.day_to_span_av(GV.datas, span, T_min, T_max, max_limit, analy_type, days, period)
 
         elif analyse=="Rain_Cumul":
             plot_depth=3
             min_rain=int(self.w_list[4].get())
             min_time_beetween_event=int(self.w_list[5].get())
             period=self.period.get()
-            go, min, max, max_limit=self.find_min_max(None, 1, 3)
+            go, T_min, T_max, max_limit=self.find_min_max(None, 1, 3)
             if go:
-                text, data=ra.rain_cumul(GV.datas, min, max, min_time_beetween_event, min_rain, period)
+                text, data=ra.rain_cumul(GV.datas, T_min, T_max, min_time_beetween_event, min_rain, period)
 
         res_text=title+"\n"+text
         if self.output_toggle.get():
