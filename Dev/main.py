@@ -366,9 +366,10 @@ class Window():
             min_rain=int(self.w_list[4].get())
             min_time_beetween_event=int(self.w_list[5].get())
             period=self.period.get()
+            per_event=self.analy_type.get()
             go, T_min, T_max, max_limit=self.find_min_max(None, 1, 3)
             if go:
-                text, data=ra.rain_cumul(GV.datas, T_min, T_max, min_time_beetween_event, min_rain, period)
+                text, data=ra.rain_cumul(GV.datas, T_min, T_max, min_time_beetween_event, min_rain, period, per_event)
 
         res_text=title+"\n"+text
         if self.output_toggle.get():
@@ -480,6 +481,7 @@ class Window():
 
         elif value=="Rain_Cumul":
             self.period.set(1)
+            self.analy_type.set(0)
             tk.Label(self.tweak_frame, text="Step:").grid(row=row,column=1)
             for w in self.w_list:
                 w.destroy()
@@ -506,6 +508,9 @@ class Window():
             tk.Radiobutton(self.tweak_frame, var=self.period, text="All Year", value=1).grid(row=2, column=8, sticky=tk.W)
             tk.Radiobutton(self.tweak_frame, var=self.period, text="Season", value=2).grid(row=3, column=8, sticky=tk.W)
             tk.Radiobutton(self.tweak_frame, var=self.period, text="Month", value=3).grid(row=4, column=8, sticky=tk.W)
+
+            tk.Radiobutton(self.tweak_frame, var=self.analy_type, text="Day to day", value=0).grid(row=2, column=9, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.analy_type, text="Per event", value=1).grid(row=3, column=9, sticky=tk.W)
 
             self.L_info.config(text=RAIN_CUMUL_INFO)
 
@@ -779,7 +784,7 @@ def analyse_from_prompt(argv):
 
         elif analyse_type=="Day_To_Span_Average":
             plot_depth=4
-            span=30
+            span=10
             days=2
             T_min, T_max=2,15
             title+="span: {} days, min time beet. events: {} days,  from: {}°C to: {}°C".format(span, days, T_min, T_max)
@@ -796,7 +801,7 @@ def analyse_from_prompt(argv):
             min_rain=6
             min_time_beetween_event=15
             T_min, T_max = 6, 24
-            text, data=ra.rain_cumul(datas, T_min, T_max, min_time_beetween_event, min_rain, period, show_info=True)
+            text, data=ra.rain_cumul(datas, T_min, T_max, min_time_beetween_event, min_rain, period, per_event, show_info=True)
 
         res_text=title+"\n"+text
         if "-of" in argv:
