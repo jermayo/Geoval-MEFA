@@ -8,7 +8,7 @@
 import datetime
 from collections import OrderedDict
 
-from temp_analyse import date_beetween
+from temp_analyse import date_beetween, make_period_list
 
 
 #######################################################################################
@@ -19,14 +19,7 @@ def rain_cumul(datas, min_step, max_step, min_time_beetween_event, min_rain, per
     min_step=max(datetime.timedelta(hours=min_step), datas[1]["date"]-datas[0]["date"])
     max_step=datetime.timedelta(hours=max_step+1)
 
-    if period==1:
-        period_list={"Year":[1,13]} #period list from month# to month# NOT INCLUDED, 13 => december included
-    elif period==2:
-        period_list={"Winter":[12,3],"Spring":[3,6],"Summer":[6,9],"Autumn":[9,12]}
-    elif period==3:
-        period_list={}
-        for i in range(1,13):
-            period_list[month_abbr[i]]=[i, i+1]
+    period_list=make_period_list(period)
 
     step=datetime.timedelta(hours=1)
     events=OrderedDict()
@@ -103,3 +96,138 @@ def rain_cumul(datas, min_step, max_step, min_time_beetween_event, min_rain, per
                 events[year][delta_t].pop(i, None)
 
     return text, events
+
+
+
+
+def rain_event(datas, period, cooldown=10, max_scale=1, cumul_scale=5, intensity_scale=1, min_cumul=1, portion=0.25):
+    def add_data(event_year, data_type, data, maxes):
+        if data not in event_year[data_type]:
+            event_year[data_type][data]=0
+        event_year[data_type][data]+=1
+        maxes[data_type]=max(data, maxes[data_type])
+
+    cooldown=datetime.timedelta(minutes=cooldown)
+
+    period_list=make_period_list(period)
+    for period in period_list:
+        period_list[period].append(0)
+
+    events=OrderedDict()
+    for period in period_list:
+        events[period]=OrderedDict()
+    maxes={"duration":0, "max":0, "cumul":0, "intensity":0}
+
+    during_event=False
+    count=0
+
+    for data in datas:
+        rain=data["rain"]
+        date=data["date"]
+        if rain>0:
+            if not during_event:
+                maxi, cumul, start, last = rain, rain, date, date
+                during_event=True
+                year=date.year
+                for period in period_list:
+                    if date_beetween(start, period_list[period][0], period_list[period][1]):
+                        if year not in events[period]:
+                            events[period][year]={"total":0, "duration":{}, "max":{}, "cumul":{}, "intensity":{}}
+
+                        break
+
+            else:
+                maxi=max(maxi, rain)
+                cumul+=rain
+                last=date
+
+        elif rain==0 and during_event and date-last>=cooldown:
+            if cumul>min_cumul:
+                period_list[period][2]+=1
+                year=start.year
+                events[period][year]["total"]+=1
+                duration=((date-start)-cooldown).total_seconds()/3600+1
+                add_data(events[period][year], "duration", int(duration), maxes)
+                add_data(events[period][year], "max", int(maxi//max_scale+1), maxes)
+                add_data(events[period][year], "cumul", int(cumul//cumul_scale+1), maxes)
+                add_data(events[period][year], "intensity", int((cumul/duration)//intensity_scale+1), maxes)
+            during_event=False
+
+    if during_event:
+        if cumul>min_cumul:
+            period_list[period][2]+=1
+            year=start.year
+            events[period][year]["total"]+=1
+            duration=((date-start)-cooldown).total_seconds()/3600+1
+            add_data(events[period][year], "duration", int(duration), maxes)
+            add_data(events[period][year], "max", int(maxi//max_scale+1), maxes)
+            add_data(events[period][year], "cumul", int(cumul//cumul_scale+1), maxes)
+            add_data(events[period][year], "intensity", int((cumul/duration)//intensity_scale+1), maxes)
+
+    text="cooldown: {} h, max scale: {} mm, cumul scale: {} mm, intensity scale: {} mm/h\n".format(cooldown, max_scale, cumul_scale, intensity_scale)
+    for period in period_list:
+        maxes_list={"max":[], "cumul":[], "intensity":[]}
+        text+="\n\n"+str(period)+":\n"
+        for year in events[period]:
+            for data in events[period][year]:
+                text+="\t"+str(data)+" "
+                if data!="total":
+                    for i in range(1, maxes[data]+1):
+                        text+=str(i)+" "
+                text+="\t"
+            break
+
+        for year in events[period]:
+            text+="\n"+str(year)+":"
+            for data in events[period][year]:
+                text+="\t\t"
+                if data=="total":
+                    text+=str(events[period][year]["total"])
+                else:
+                    for i in range(1, maxes[data]+1):
+                        if i in events[period][year][data]:
+                            value=events[period][year][data][i]
+                            if data in maxes_list:
+                                for j in range(value):
+                                    maxes_list[data].append({"value":i, "year":year})
+
+                        else:
+                            value=0
+                        text+=" "+str(value)
+
+
+        for i in maxes_list:
+            while len(maxes_list[i])>period_list[period][2]*portion:
+                mini=min([j["value"] for j in maxes_list[i]])
+                for j in maxes_list[i]:
+                    if j["value"]==mini:
+                        maxes_list[i].remove(j)
+            text+="\n"+str(i)+":\t"
+
+            for year in events[period]:
+                year_total=0
+                for j in maxes_list[i]:
+                    if year==j["year"]:
+                        year_total+=1
+                text+="\t{}: {:.1f}%\t".format(year, year_total/len(maxes_list[i])*100)
+
+
+
+    return text
+
+def max_rain(datas, period, Rmin, Rmax):
+    period_list=make_period_list(period)
+
+
+    events=OrderedDict()
+    for period in period_list:
+        events[period]=OrderedDict()
+    for data in datas:
+        for i in range(Rmin, Rmax+1):
+            if data["rain"]>=i:
+                for period in period_list:
+                    if date_beetween(data["date"], period_list[period][0], period_list[period][1]):
+                        year=data["date"].year
+                        if year not in events:
+                            events[period][year]=0
+                    break

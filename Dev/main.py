@@ -710,7 +710,7 @@ class Window():
 #######################################################################################
 ###################### NO GUI #########################################################
 
-def analyse_from_prompt(argv):
+def analyse_from_prompt(argv, output_file):
     print("  > Opening file ...", end="\r")
     analyse_type=argv[2]
     per_event, with_max, save_plot, show_plot= False, False, False, False
@@ -803,13 +803,17 @@ def analyse_from_prompt(argv):
             T_min, T_max = 6, 24
             text, data=ra.rain_cumul(datas, T_min, T_max, min_time_beetween_event, min_rain, period, per_event, show_info=True)
 
+        elif analyse_type=="Rain_Event":
+            plot_depth=0
+            text=ra.rain_event(datas, period)
+
         res_text=title+"\n"+text
-        if "-of" in argv:
-            if not file_write("output.txt",res_text, read_log):
+        if "-of" in argv or output_file!="output.txt":
+            if not file_write(output_file, res_text, read_log):
                 print("  > Error: File not found (404)")
                 return
             else:
-                print("  > See file 'output.txt'")
+                print("  > See file "+output_file)
 
         if (show_plot or save_plot) and plot_depth:
             for i in range(TAKE_OUT_FIRST):
@@ -845,7 +849,7 @@ RAIN_LIMIT=100
 TEMP_LIMIT=100
 
 
-ANALYSE_TYPE = ("Data_Cleaning", "Difference_Time", "Temp_Average", "Day_To_Span_Average", "Rain_Cumul")
+ANALYSE_TYPE = ("Data_Cleaning", "Difference_Time", "Temp_Average", "Day_To_Span_Average", "Rain_Cumul", "Rain_Event")
 
 
 
@@ -886,7 +890,7 @@ With 'With max' (only possible for Auto Range), an event is counted ONLY in the 
 #######################################################################################
 #                            Main programme                                           #
 #######################################################################################
-
+output_file="output.txt"
 n=len(sys.argv)
 
 d=0
@@ -897,9 +901,13 @@ GV=GlobalVariables(default=d)
 flag=False
 argument_list=["-h", "-pe", "-wm", "-da", "--year", "--season", "--month", "--show-plot", "--save-plot", "-of"]
 for i in sys.argv:
-    if i[0]=="-" and i not in argument_list:
+    if i[:4]=="-of=":
+        output_file=i[4:]
+    elif i[0]=="-" and i not in argument_list:
         print("Error: '{}' not a known argument\nFormat must be:\n".format(i))
         flag=True
+
+
 if "-h" in sys.argv or (n>1 and sys.argv[1][0]=="-") or (n>2 and sys.argv[2][0]=="-") or flag:
     print("mefa_v19.x FILE_NAME ANALYSE_TYPE [DATA_FORMAT (0,1 or 2)] [-h, -pe, -wm, -da, --year/--season/--month, --show-plot, --save-plot, -of]\n")
     print("ANALYSE_TYPE must be: "+str(ANALYSE_TYPE))
@@ -909,7 +917,7 @@ elif n>2:
     if sys.argv[2] not in ANALYSE_TYPE:
         print("Error: ANALYSE_TYPE must be: "+str(ANALYSE_TYPE))
     else:
-        analyse_from_prompt(sys.argv)
+        analyse_from_prompt(sys.argv, output_file)
 else:
     if n==2:
         DEFAULT_FILE_NAME=sys.argv[1]

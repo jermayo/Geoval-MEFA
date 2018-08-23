@@ -17,6 +17,17 @@ def date_beetween(date, month_start, month_end):
         return True
     return False
 
+def make_period_list(period):
+    if period==1:
+        return {"Year":[1,13]} #period list from month# to month# NOT INCLUDED, 13 => december included
+    elif period==2:
+        return {"Winter":[12,3],"Spring":[3,6],"Summer":[6,9],"Autumn":[9,12]}
+    elif period==3:
+        period_list={}
+        for i in range(1,13):
+            period_list[month_abbr[i]]=[i, i+1]
+        return period_list
+
 def check_new_year(year, events, min, max, periods=False):
     if year not in events:
         new_period=OrderedDict()
@@ -142,14 +153,7 @@ def clean_daily_average(datas, show_info=False):
 #Difference of temp with hours before
 def diff_time(datas, delta_t, time_max_event, period, min, max, max_limit, show_info=False):
     #month_start and month end of type int, month_end NOT included, 13 means decembre included
-    if period==1:
-        period_list={"Year":[1,13]} #period list from month# to month# NOT INCLUDED, 13 => december included
-    elif period==2:
-        period_list={"Winter":[12,3],"Spring":[3,6],"Summer":[6,9],"Autumn":[9,12]}
-    elif period==3:
-        period_list={}
-        for i in range(1,13):
-            period_list[month_abbr[i]]=[i, i+1]
+    period_list=make_period_list(period)
 
     event_list=OrderedDict()
 
@@ -272,14 +276,7 @@ def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event
     days=daily_average(datas)
     days_beet_event=datetime.timedelta(days=days_beet_event)
 
-    if period==1:
-        period_list={"Year":[1,13]} #period list from month# to month# NOT INCLUDED, 13 => december included
-    elif period==2:
-        period_list={"Winter":[12,3],"Spring":[3,6],"Summer":[6,9],"Autumn":[9,12]}
-    elif period==3:
-        period_list={}
-        for i in range(1,13):
-            period_list[month_abbr[i]]=[i, i+1]
+    period_list=make_period_list(period)
 
 
     n=len(datas)
