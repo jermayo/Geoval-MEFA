@@ -805,7 +805,11 @@ def analyse_from_prompt(argv, output_file):
 
         elif analyse_type=="Rain_Event":
             plot_depth=0
-            text=ra.rain_event(datas, period)
+            text=ra.rain_event(datas, period, portion=0.5)
+
+        elif analyse_type=="Max_Rain":
+            plot_depth=0
+            text=ra.max_rain(datas, period, 1, per_event, increment=0.5)
 
         res_text=title+"\n"+text
         if "-of" in argv or output_file!="output.txt":
@@ -849,7 +853,7 @@ RAIN_LIMIT=100
 TEMP_LIMIT=100
 
 
-ANALYSE_TYPE = ("Data_Cleaning", "Difference_Time", "Temp_Average", "Day_To_Span_Average", "Rain_Cumul", "Rain_Event")
+ANALYSE_TYPE = ("Data_Cleaning", "Difference_Time", "Temp_Average", "Day_To_Span_Average", "Rain_Cumul", "Rain_Event", "Max_Rain")
 
 
 
