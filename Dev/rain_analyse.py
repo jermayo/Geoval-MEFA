@@ -218,14 +218,12 @@ def rain_event(datas, period, cooldown=10, max_scale=1, cumul_scale=5, intensity
                         year_total+=1
                 text_list[i][year][period]=year_total/len(maxes_list[period][i])*100
 
+    text+="\n\n{:.2f}% of the biggest events\n".format(portion*100)
     for i in text_list:
-        text+="\n\n"+str(i)+"\n"
+        text+="\n"+str(i)+"\n"
         first=True
         for year in text_list[i]:
-            if first:
-                first=False
-                continue
-            for period in text_list[i][year]:
+            for period in period_list:
                 text+="\t"+str(period)
             break
         for year in text_list[i]:
@@ -235,14 +233,16 @@ def rain_event(datas, period, cooldown=10, max_scale=1, cumul_scale=5, intensity
     return text
 
 
-def max_rain(datas, period, Rmin, per_event, increment=1):
+def rain_max(datas, period, Rmin, per_event, increment=1, portion=0.25):
     period_list=make_period_list(period)
     events=OrderedDict()
     min_rain=[]
     during_event=False
+    event_list=OrderedDict()
 
     for period in period_list:
         events[period]=OrderedDict()
+        event_list[period]=[]
     for data in datas:
         i=Rmin
         year=data["date"].year
@@ -264,6 +264,7 @@ def max_rain(datas, period, Rmin, per_event, increment=1):
                             events[period][year][i]["total"]+=1
                             events[period][year][i]["during_event"]=True
                             last_year=year
+                            event_list[period].append({"total":i, "year":year})
                         break
                 break
             i+=increment
@@ -290,4 +291,28 @@ def max_rain(datas, period, Rmin, per_event, increment=1):
                 if i in events[period][year]:
                     text+=str(events[period][year][i]["total"])
                 text+="\t"
+
+    text_list=OrderedDict()
+    text+="\n\n{:.2f}% of the biggest event\n".format(portion*100)
+    period_max=OrderedDict()
+    for period in event_list:
+        text+="\t"+str(period)
+        period_max[period]=len(event_list[period])*portion
+        while len(event_list[period])>period_max[period]:
+            mini=min([i["total"] for i in event_list[period]])
+            for i in event_list[period]:
+                if mini==i["total"]:
+                    event_list[period].remove(i)
+                    break
+        for i in event_list[period]:
+            if i["year"] not in text_list:
+                text_list[i["year"]]=OrderedDict()
+                for p in period_list:
+                    text_list[i["year"]][p]=0
+            text_list[i["year"]][period]+=1
+
+    for year in sorted(text_list):
+        text+="\n"+str(year)+"\t"
+        for period in text_list[year]:
+            text+="{:.1f}%\t".format(text_list[year][period]/period_max[period]*100)
     return text

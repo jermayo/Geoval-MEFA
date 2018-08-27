@@ -4,7 +4,7 @@ Meteorological Events Frequency Analysis
 
 Description:
 Programme pour l'analyse de l'évolution de la température et des précipitions.
-Le but est d'observer l'éventuel augmentation du nombre d'évènements par année.
+Le but est d'observer l'éventuelle augmentation du nombre d'évènements par année.
 
 
 Utilisation:
@@ -17,14 +17,14 @@ Utilisation:
 Syntaxe: ./mefa_vxx.x FILE_NAME ANALYSE_TYPE [DATA_FORMAT (0,1 or 2)] [-h, -pe, -wm, -da, --season/--month, --show-plot, --save-plot, -of]")
 Type d'analyse: "Data_Cleaning", "Difference_Time", "Temp_Average", "Day_To_Span_Average", "Rain_Cumul"
 Format de donnée: voir programme GUI, sous "Change Load Param"
--h:			        help
--pe:			    per event
--wm:			    with max
--da			        daily average
---season/--month:   period (only one)
---show-plot:		show plot
---save-plot:		save plot
--of:			    output file
+-h:			              help
+-pe:			          per event
+-wm:			          with max
+-da			              daily average
+--year/--season/--month:  period (un ou plus)
+--show-plot:		      show plot
+--save-plot:		      save plot
+-of:			          output file (-of=... pour ne pas utiliser le fichier par défault 'output.txt')
 
 
 Fichier "automate":
@@ -41,9 +41,9 @@ Dossiers:
 
 
 Versions:
-Dev: 1.9.5 (?), Fixed: 1.9.4, Exe: Linux: 1.9.4 mefa_v19.x, Windows: 1.9.3 mefa_v19.exe
+Dev: 1.9.6 (?), Fixed: 1.9.5, Exe: Linux: 1.9.5 mefa_v19.x, Windows: 1.9.5 mefa_v19.exe
 
 
 
-Jérémy Mayoraz pour Géoval, 10 août 2018
+Jérémy Mayoraz pour Géoval, 27 août 2018
 Pour toutes questions: jeremy.mayoraz@gmail.com

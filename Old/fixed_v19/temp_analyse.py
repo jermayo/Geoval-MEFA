@@ -17,6 +17,17 @@ def date_beetween(date, month_start, month_end):
         return True
     return False
 
+def make_period_list(period):
+    if period==1:
+        return {"Year":[1,13]} #period list from month# to month# NOT INCLUDED, 13 => december included
+    elif period==2:
+        return {"Winter":[12,3],"Spring":[3,6],"Summer":[6,9],"Autumn":[9,12]}
+    elif period==3:
+        period_list={}
+        for i in range(1,13):
+            period_list[month_abbr[i]]=[i, i+1]
+        return period_list
+
 def check_new_year(year, events, min, max, periods=False):
     if year not in events:
         new_period=OrderedDict()
@@ -38,9 +49,8 @@ def daily_average(datas):
     for data in datas:
         date=data["date"].date()
         if date not in days:
-            days[date]={"temp":0, "rain":0, "numb_of_val":0}
+            days[date]={"temp":0, "numb_of_val":0}
         days[date]["temp"]+=data["temp"]
-        days[date]["rain"]+=data["rain"]
         days[date]["numb_of_val"]+=1
     for day in days:
         days[day]["temp"]=days[day]["temp"]/days[day]["numb_of_val"]
@@ -64,8 +74,11 @@ def build_text(res, T_min, T_max, period_list=[""]):
                     text+=str(res[year][temp][data])+"\t"
             else:
                 for period in period_list:
-                    for data in ["pos","neg","total"]:
-                        text+=str(res[year][temp][period][data])+"\t"
+#!!! TO REMOVE
+                    if period=="Summer":
+#!!! END
+                        for data in ["pos","neg","total"]:
+                            text+=str(res[year][temp][period][data])+"\t"
     return text
 
 
@@ -118,32 +131,42 @@ def check_event_last(events, max_limit):
 
 #######################################################################################
 ########################## Clean Daily Average ########################################
-def clean_daily_average(datas):
+def clean_daily_average(temp_datas, rain_datas, show_info=False):
     days=daily_average(datas)
     text="Day\t\tTemp\tRain\n"
-    for day in days:
-        text+="{}\t{:.3f}\t{:.3f}\n".format(day,days[day]["temp"],days[day]["rain"])
 
+    n=len(datas)
+    incr=0
+    count=0
+    for day in days:
+        if show_info:
+            count+=1
+            if count/n>=incr:
+                print("  > Analysing data  {:.0f}%".format(incr*100), end="\r")
+                incr+=0.01
+        text+="{}\t{:.3f}\t{:.3f}\n".format(day,days[day]["temp"],days[day]["rain"])
+    if show_info:
+        print("  > Analysing data  {:.0f}%".format(100))
     return text
 
 
 #######################################################################################
 ########################## DIFF TIME ##################################################
 #Difference of temp with hours before
-def diff_time(datas, delta_t, time_max_event, period, min, max, max_limit):
+def diff_time(datas, delta_t, time_max_event, period, min, max, max_limit, show_info=False):
     #month_start and month end of type int, month_end NOT included, 13 means decembre included
-    if period==1:
-        period_list={"Year":[1,13]} #period list from month# to month# NOT INCLUDED, 13 => december included
-    elif period==2:
-        period_list={"Winter":[12,3],"Spring":[3,6],"Summer":[6,9],"Autumn":[9,12]}
-    elif period==3:
-        period_list={}
-        for i in range(1,13):
-            period_list[month_abbr[i]]=[i, i+1]
+    period_list=make_period_list(period)
 
     event_list=OrderedDict()
 
-    for i in range(0,len(datas)):
+    n=len(datas)
+    incr=0
+
+    for i in range(n):
+        if show_info:
+            if i/n>=incr:
+                print("  > Analysing data  {:.0f}%".format(incr*100), end="\r")
+                incr+=0.01
         year=datas[i]["date"].year
         event_list=check_new_year(year, event_list, min, max, period_list)
 
@@ -156,7 +179,8 @@ def diff_time(datas, delta_t, time_max_event, period, min, max, max_limit):
 
         if j>=len(datas)-1:
             break
-
+    if show_info:
+        print("  > Analysing data  {:.0f}%".format(100))
     event_list=check_event_last(event_list, max_limit)
 
     return build_text(event_list, min, max, period_list=period_list), event_list
@@ -167,7 +191,7 @@ def diff_time(datas, delta_t, time_max_event, period, min, max, max_limit):
 #temp average: 1 average done for each day, 2 average over each same day of year, 3 comparaison each day/average of typical day
 #analy_type: =0 -> day to day, =1 -> per event
 
-def temp_average(datas, analy_type, min, max, max_limit):
+def temp_average(datas, analy_type, min, max, max_limit, show_info=False):
     typical_average={}
     days_average={}
     events={}
@@ -202,8 +226,17 @@ def temp_average(datas, analy_type, min, max, max_limit):
         else:
             days_average[day]=0
 
+    n=len(datas)
+    incr=0
+    count=0
 
     for day in days_average:
+        if show_info:
+            count+=1
+            if count/n>=incr:
+                print("  > Analysing data  {:.0f}%".format(incr*100), end="\r")
+                incr+=0.01
+
         day_numb=(day-(datetime.datetime(day.year, 1, 1)).date()).days+1
         diff=days_average[day]-typical_average[day_numb]
         for temp in range(min, max+1):
@@ -236,24 +269,28 @@ def temp_average(datas, analy_type, min, max, max_limit):
             events[year][temp].pop("during_event", None)
             events[year][temp].pop("max", None)
 
-
+    if show_info:
+        print("  > Analysing data  {:.0f}%".format(100))
     return build_text(events, min, max), events
 
-def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event, period):
+def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event, period, show_info=False):
     events=OrderedDict()
     days=daily_average(datas)
     days_beet_event=datetime.timedelta(days=days_beet_event)
 
-    if period==1:
-        period_list={"Year":[1,13]} #period list from month# to month# NOT INCLUDED, 13 => december included
-    elif period==2:
-        period_list={"Winter":[12,3],"Spring":[3,6],"Summer":[6,9],"Autumn":[9,12]}
-    elif period==3:
-        period_list={}
-        for i in range(1,13):
-            period_list[month_abbr[i]]=[i, i+1]
+    period_list=make_period_list(period)
 
+
+    n=len(datas)
+    incr=0
+    count=0
     for day in days:
+        if show_info:
+            count+=1
+            if count/n>=incr:
+                print("  > Analysing data  {:.0f}%".format(incr*100), end="\r")
+                incr+=0.01
+
         year=day.year
         events=check_new_year(year, events, min, max, periods=period_list)
 
@@ -273,7 +310,8 @@ def day_to_span_av(datas, span, min, max, max_limit, analy_type, days_beet_event
         average=average/numb_of_value
         d_temp=days[day]["temp"]-average
         events[year]=check_event(events[year], d_temp, period_list, day, days_beet_event, max_limit, analy_type)
-
+    if show_info:
+        print("  > Analysing data  {:.0f}%".format(100))
     events=check_event_last(events, max_limit)
 
     return build_text(events, min, max, period_list=period_list), events

@@ -5,7 +5,6 @@
 # Jérémy Mayoraz pour GéoVal
 # Sion, Août 2018
 
-
 import sys
 import tkinter as tk
 from tkinter import messagebox
@@ -23,7 +22,8 @@ import plot
 #Global variables of the programme
 class GlobalVariables():
     def __init__(self, default=0):
-        self.datas=None
+        self.temp_datas=None
+        self.rain_datas=None
         self.read_log=None
         self.temp_col=False
         self.rain_col=False
@@ -55,16 +55,20 @@ def create_data(line, column, complete_date):
         else:
             date_val=get("Year")+"-"+get("Month")+"-"+get("Day")
             date_val+="-"+get("Hour")+"-"+get("Minutes")
-        data={"date":datetime.datetime.strptime(date_val, GV.date_format)}
+        rain_data={"date":datetime.datetime.strptime(date_val, GV.date_format)}
+        temp_data={"date":datetime.datetime.strptime(date_val, GV.date_format)}
 
-        data["rain"]=eval(get("Rain"))
-        data["temp"]=eval(get("Temp"))
+        rain_data["rain"]=eval(get("Rain"))
+        temp_data["temp"]=eval(get("Temp"))
 
-        if abs(data["rain"])>RAIN_LIMIT or abs(data["temp"])>TEMP_LIMIT:
-            return data, False
-        return data, True
+        return_temp, return_rain=True, True
+        if abs(rain_data["rain"])>=RAIN_LIMIT:
+            return_rain=False
+        if abs(temp_data["temp"])>TEMP_LIMIT:
+            return_temp=False
+        return temp_data, rain_data, return_temp, return_rain
     except:
-        return False, "Data could not be retrieved"
+        return False, False, "Data could not be retrieved", False
 
 
 #File Reading and Writting
@@ -78,11 +82,9 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8", show_info=Fa
                 return False
         return True
 
-    datas=[]
-    bad_data=0
+    temp_datas, rain_datas=[], []
+    bad_temp_data, bad_rain_data= 0, 0
     column=[]
-    first_year=999999
-    last_year=0
     complete_date=False
 
     if file_name=="Hello There!":
@@ -102,7 +104,7 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8", show_info=Fa
         file_lines=file.readlines()
         file.close()
     except FileNotFoundError:
-        return False, False, "File not found (Err. 404)"
+        return False, False, False, "File not found (Err. 404)"
 
     if show_info:
         show_info=1
@@ -113,22 +115,17 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8", show_info=Fa
         line=comp_line.split()
         #Main data input
         if flag_1 and line!=[]:
-            new_data, flag = create_data(line, column, complete_date)
-            if not new_data:
-                return False, False, flag
-            if flag:
-                if len(datas)==0:
-                    datas.append(new_data)
-                elif new_data["date"]>datas[-1]["date"]:
-                    datas.append(new_data)
-                    first_year=min(first_year, new_data["date"].year)
-                    last_year=max(last_year, new_data["date"].year)
-
-                else:
-#!!! To do: Auto sort by date
-                    return False, False, "Data not in order (Date: {})".format(line["date"])
+            new_temp_data, new_rain_data, temp_flag, rain_flag = create_data(line, column, complete_date)
+            if not new_temp_data and not new_rain_data:
+                return False, False, False, temp_flag
+            if temp_flag:
+                temp_datas.append(new_temp_data)
             else:
-                bad_data+=1
+                bad_temp_data+=1
+            if rain_flag:
+                rain_datas.append(new_rain_data)
+            else:
+                bad_rain_data+=1
 
         #Get startitng point
         elif get_start(line, column):
@@ -140,7 +137,7 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8", show_info=Fa
                     column.append({"pos":i, "name":temp_col, "val":"Temp"})
                     flag_1=True
             if not flag_1:
-                return False, False, "No temperature or rain data detected"
+                return False, False, False, "No temperature or rain data detected"
         #Automatic rain and temp column detection
         elif len(line)>1 and GV.auto_mode:
             if line[1][0:5]==GV.rain_keyword[0:5]:
@@ -155,10 +152,12 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8", show_info=Fa
             show_info+=1
     if show_info:
         print("  > Opening file    {:.0f}%".format(100))
-    if len(datas)==0:
-        return False, False, "Data could not be retrieved"
-    log="{} values with {} bad values ({:.1f}%) (taken out)".format(len(datas), bad_data, bad_data/len(datas)*100)
-    return datas, log, None
+    if len(temp_datas)+len(rain_datas)==0:
+        return False, False, False, "Data could not be retrieved"
+    log="{} temperature values with {} bad values ({:.1f}%) (taken out)\n".format(len(temp_datas), bad_temp_data, bad_temp_data/len(temp_datas)*100)
+    log+="{} rain values with {} bad values ({:.1f}%) (taken out)\n".format(len(rain_datas), bad_rain_data, bad_rain_data/len(rain_datas)*100)
+
+    return temp_datas, rain_datas, log, None
 
 
 def file_write(file_name, res, log):
@@ -251,7 +250,7 @@ class Window():
 
         tk.Label(self.w, text="Analyse type:").grid(row=3,column=0)
         self.analyse_type.set(ANALYSE_TYPE[0])
-        self.O_analyse=tk.OptionMenu(self.w, self.analyse_type, *ANALYSE_TYPE, command=self.change_analyse)
+        self.O_analyse=tk.OptionMenu(self.w, self.analyse_type, *ANALYSE_TYPE_GUI, command=self.change_analyse)
         self.O_analyse.grid(row=3,column=1)
 
 
@@ -272,10 +271,10 @@ class Window():
         self.load_begin()
 
         self.file_name=self.E_file.get()
-        datas, read_log, message=read_file(self.file_name, GV.temp_col, GV.rain_col, file_encoding=FILE_ENCODING)
+        temp_datas, rain_datas, read_log, message=read_file(self.file_name, GV.temp_col, GV.rain_col, file_encoding=FILE_ENCODING)
         self.load_end()
         if read_log:
-            GV.datas, GV.read_log = datas, read_log
+            GV.temp_datas, GV.rain_datas, GV.read_log = temp_datas, rain_datas, read_log
             self.init_analyse_option()
             self.L_file.config(text = "File '{}' loaded".format(self.file_name))
             messagebox.showinfo("Done", "File loaded: \n"+GV.read_log)
@@ -309,14 +308,22 @@ class Window():
         title=analyse+": "
         if analyse=="Data_Cleaning":
             if self.daily_av.get():
-                text=ta.clean_daily_average(GV.datas)
-
+                text=ta.clean_daily_average(GV.temp_datas)
             else:
                 text=""
-                for data in GV.datas:
-                    text+="\n"
-                    for elem in data:
-                        text+=str(data[elem])+"\t\t"
+                temp, rain=GV.temp_datas, GV.rain_datas
+                t,r=0,0
+                for l in range(max(len(temp), len(rain))):
+                    if t>=len(temp) or temp[t]["date"]>rain[r]["date"]:
+                        text+="\n"+str(rain[r]["date"])+"\t \t"+str(rain[r]["rain"])
+                        r+=1
+                    elif r>=len(rain) or temp[t]["date"]<rain[r]["date"]:
+                        text+="\n"+str(temp[t]["date"])+"\t"+str(temp[t]["temp"])+"\t "
+                        t+=1
+                    elif temp[t]["date"]==rain[r]["date"]:
+                        text+="\n"+str(rain[r]["date"])+"\t"+str(temp[t]["temp"])+"\t"+str(rain[r]["rain"])
+                        r+=1
+                        t+=1
 
         elif analyse=="Difference_Time":
             plot_depth=4
@@ -329,7 +336,7 @@ class Window():
                 title+=" with max limit"
             #title+="\n"
             if go:
-                text, data=ta.diff_time(GV.datas, delta_t, time_max_event, period, T_min, T_max, max_limit)
+                text, data=ta.diff_time(GV.temp_datas, delta_t, time_max_event, period, T_min, T_max, max_limit)
 
 
         elif analyse=="Temp_Average":
@@ -342,7 +349,7 @@ class Window():
             else:
                 title+=", day to day"
             if go:
-                text, data=ta.temp_average(GV.datas, period_type, T_min, T_max, max_limit)
+                text, data=ta.temp_average(GV.temp_datas, period_type, T_min, T_max, max_limit)
 
         elif analyse=="Day_To_Span_Average":
             plot_depth=4
@@ -359,7 +366,7 @@ class Window():
             else:
                 title+=", day to day"
             if go:
-                text, data=ta.day_to_span_av(GV.datas, span, T_min, T_max, max_limit, analy_type, days, period)
+                text, data=ta.day_to_span_av(GV.temp_datas, span, T_min, T_max, max_limit, analy_type, days, period)
 
         elif analyse=="Rain_Cumul":
             plot_depth=3
@@ -369,7 +376,7 @@ class Window():
             per_event=self.analy_type.get()
             go, T_min, T_max, max_limit=self.find_min_max(None, 1, 3)
             if go:
-                text, data=ra.rain_cumul(GV.datas, T_min, T_max, min_time_beetween_event, min_rain, period, per_event)
+                text, data=ra.rain_cumul(GV.rain_datas, T_min, T_max, min_time_beetween_event, min_rain, period, per_event)
 
         res_text=title+"\n"+text
         if self.output_toggle.get():
@@ -734,7 +741,7 @@ def analyse_from_prompt(argv, output_file):
         print("  > Error: No period given")
         return
 
-    datas, read_log, message=read_file(DEFAULT_FILE_NAME, False, False, file_encoding=FILE_ENCODING, show_info=True)
+    temp_datas, rain_datas, read_log, message=read_file(DEFAULT_FILE_NAME, False, False, file_encoding=FILE_ENCODING, show_info=True)
     if message:
         print(message)
         return
@@ -750,24 +757,31 @@ def analyse_from_prompt(argv, output_file):
         print("  > Analysing data ...", end="\r")
         if analyse_type=="Data_Cleaning" and first:
             if "-da" in argv:
-                text=ta.clean_daily_average(datas, show_info=True)
+                text=ta.clean_daily_average(temp_datas, rain_datas, show_info=True)
             else:
-                text=""
-                for data in datas:
-                    text+="\n"
-                    for elem in data:
-                        text+=str(data[elem])+"\t\t"
-                print("")
-
+                text="date\ttemp\train"
+                temp, rain=temp_datas, rain_datas
+                t,r=0,0
+                for l in range(max(len(temp), len(rain))):
+                    if t>=len(temp) or temp[t]["date"]>rain[r]["date"]:
+                        text+="\n"+str(rain[r]["date"])+"\t \t"+str(rain[r]["rain"])
+                        r+=1
+                    elif r>=len(rain) or temp[t]["date"]<rain[r]["date"]:
+                        text+="\n"+str(temp[t]["date"])+"\t"+str(temp[t]["temp"])+"\t "
+                        t+=1
+                    elif temp[t]["date"]==rain[r]["date"]:
+                        text+="\n"+str(rain[r]["date"])+"\t"+str(temp[t]["temp"])+"\t"+str(rain[r]["rain"])
+                        r+=1
+                        t+=1
         elif analyse_type=="Difference_Time":
             plot_depth=4
             delta_t=datetime.timedelta(hours=24)
             time_max_event=datetime.timedelta(hours=24)
-            T_min, T_max=5, 15
+            T_min, T_max=2, 8
             title+="delta t: {}, event time max: {}, from: {}°C to: {}°C".format(delta_t, time_max_event, T_min, T_max)
             if with_max:
                 title+=" with max limit"
-            text, data=ta.diff_time(datas, delta_t, time_max_event, period, T_min, T_max, with_max, show_info=True)
+            text, data=ta.diff_time(temp_datas, delta_t, time_max_event, period, T_min, T_max, with_max, show_info=True)
 
 
         elif analyse_type=="Temp_Average" and first:
@@ -780,13 +794,13 @@ def analyse_from_prompt(argv, output_file):
                 title+=", per event"
             else:
                 title+=", day to day"
-            text, data=ta.temp_average(datas, per_event, T_min, T_max, with_max, show_info=True)
+            text, data=ta.temp_average(temp_datas, per_event, T_min, T_max, with_max, show_info=True)
 
         elif analyse_type=="Day_To_Span_Average":
             plot_depth=4
             span=10
             days=2
-            T_min, T_max=2,15
+            T_min, T_max=2,10
             title+="span: {} days, min time beet. events: {} days,  from: {}°C to: {}°C".format(span, days, T_min, T_max)
             if with_max:
                 title+=" with max limit"
@@ -794,22 +808,22 @@ def analyse_from_prompt(argv, output_file):
                 title+=", per event"
             else:
                 title+=", day to day"
-            text, data=ta.day_to_span_av(datas, span, T_min, T_max, with_max, per_event, days, period, show_info=True)
+            text, data=ta.day_to_span_av(temp_datas, span, T_min, T_max, with_max, per_event, days, period, show_info=True)
 
         elif analyse_type=="Rain_Cumul":
             plot_depth=3
             min_rain=6
             min_time_beetween_event=15
             T_min, T_max = 6, 24
-            text, data=ra.rain_cumul(datas, T_min, T_max, min_time_beetween_event, min_rain, period, per_event, show_info=True)
+            text, data=ra.rain_cumul(rain_datas, T_min, T_max, min_time_beetween_event, min_rain, period, per_event, show_info=True)
 
         elif analyse_type=="Rain_Event":
             plot_depth=0
-            text=ra.rain_event(datas, period, portion=0.5)
+            text=ra.rain_event(rain_datas, period, portion=0.5)
 
-        elif analyse_type=="Max_Rain":
+        elif analyse_type=="Rain_Max":
             plot_depth=0
-            text=ra.max_rain(datas, period, 1, per_event, increment=0.5)
+            text=ra.rain_max(rain_datas, period, 1, per_event, increment=0.5)
 
         res_text=title+"\n"+text
         if "-of" in argv or output_file!="output.txt":
@@ -853,9 +867,8 @@ RAIN_LIMIT=100
 TEMP_LIMIT=100
 
 
-ANALYSE_TYPE = ("Data_Cleaning", "Difference_Time", "Temp_Average", "Day_To_Span_Average", "Rain_Cumul", "Rain_Event", "Max_Rain")
-
-
+ANALYSE_TYPE = ("Data_Cleaning", "Difference_Time", "Temp_Average", "Day_To_Span_Average", "Rain_Cumul", "Rain_Event", "Rain_Max")
+ANALYSE_TYPE_GUI=("Data_Cleaning", "Difference_Time", "Temp_Average", "Day_To_Span_Average", "Rain_Cumul")
 
 FILE_ENCODING="ISO 8859-1"        #Encoding not same on linux and windows (fgs wondows)
 
@@ -915,7 +928,7 @@ for i in sys.argv:
 if "-h" in sys.argv or (n>1 and sys.argv[1][0]=="-") or (n>2 and sys.argv[2][0]=="-") or flag:
     print("mefa_v19.x FILE_NAME ANALYSE_TYPE [DATA_FORMAT (0,1 or 2)] [-h, -pe, -wm, -da, --year/--season/--month, --show-plot, --save-plot, -of]\n")
     print("ANALYSE_TYPE must be: "+str(ANALYSE_TYPE))
-    print("\nArguments:\n-h\t\t\t help\n-pe\t\t\t per event\n-wm\t\t\t with max\n-da\t\t\t daily average\n--year/--season/--month: period (can be more than one)\n--show-plot\t\t show plot\n--save-plot\t\t save plot\n-of\t\t\t output file")
+    print("\nArguments:\n-h\t\t\t help\n-pe\t\t\t per event\n-wm\t\t\t with max\n-da\t\t\t daily average\n--year/--season/--month: period (can be more than one)\n--show-plot\t\t show plot\n--save-plot\t\t save plot\n-of\t\t\t output file (-of=... to change from default 'output.txt')")
 elif n>2:
     DEFAULT_FILE_NAME=sys.argv[1]
     if sys.argv[2] not in ANALYSE_TYPE:

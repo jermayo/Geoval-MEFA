@@ -49,9 +49,8 @@ def daily_average(datas):
     for data in datas:
         date=data["date"].date()
         if date not in days:
-            days[date]={"temp":0, "rain":0, "numb_of_val":0}
+            days[date]={"temp":0, "numb_of_val":0}
         days[date]["temp"]+=data["temp"]
-        days[date]["rain"]+=data["rain"]
         days[date]["numb_of_val"]+=1
     for day in days:
         days[day]["temp"]=days[day]["temp"]/days[day]["numb_of_val"]
@@ -129,7 +128,7 @@ def check_event_last(events, max_limit):
 
 #######################################################################################
 ########################## Clean Daily Average ########################################
-def clean_daily_average(datas, show_info=False):
+def clean_daily_average(temp_datas, show_info=False):
     days=daily_average(datas)
     text="Day\t\tTemp\tRain\n"
 
