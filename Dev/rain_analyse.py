@@ -219,8 +219,12 @@ def rain_event(datas, period, cooldown=10, max_scale=1, cumul_scale=5, intensity
                 text_list[i][year][period]=year_total/len(maxes_list[period][i])*100
 
     for i in text_list:
-        text+="\n"+str(i)+"\n\t"
+        text+="\n\n"+str(i)+"\n"
+        first=True
         for year in text_list[i]:
+            if first:
+                first=False
+                continue
             for period in text_list[i][year]:
                 text+="\t"+str(period)
             break
