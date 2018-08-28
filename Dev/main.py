@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 # MEFA: Meterological Event Frequency Analysis Software
-# Ver. 1.8.1
+# Ver. 1.9.6
 # Jérémy Mayoraz pour GéoVal
 # Sion, Août 2018
 
@@ -68,7 +68,7 @@ def create_data(line, column, complete_date):
             return_temp=False
         return temp_data, rain_data, return_temp, return_rain
     except:
-        return False, False, "Data could not be retrieved", False
+        return False, False, "Data could not be retrieved\nTry changing loading parameters", False
 
 
 #File Reading and Writting
@@ -153,7 +153,7 @@ def read_file(file_name, temp_col, rain_col, file_encoding="UTF-8", show_info=Fa
     if show_info:
         print("  > Opening file    {:.0f}%".format(100))
     if len(temp_datas)+len(rain_datas)==0:
-        return False, False, False, "Data could not be retrieved"
+        return False, False, False, "Data could not be retrieved\nTry changing loading parameters"
     log="{} temperature values with {} bad values ({:.1f}%) (taken out)\n".format(len(temp_datas), bad_temp_data, bad_temp_data/len(temp_datas)*100)
     log+="{} rain values with {} bad values ({:.1f}%) (taken out)\n".format(len(rain_datas), bad_rain_data, bad_rain_data/len(rain_datas)*100)
 
@@ -340,8 +340,9 @@ class Window():
 
 
         elif analyse=="Temp_Average":
-            plot_depth=3
+            plot_depth=4
             period_type=self.analy_type.get()
+            period=self.period.get()
             go, T_min, T_max, max_limit=self.find_min_max(0, 2, 4)
             title+="from: {}°C to: {}°C".format(T_min, T_max)
             if period_type:
@@ -349,7 +350,7 @@ class Window():
             else:
                 title+=", day to day"
             if go:
-                text, data=ta.temp_average(GV.temp_datas, period_type, T_min, T_max, max_limit)
+                text, data=ta.temp_average(GV.temp_datas, period_type, T_min, T_max, max_limit, period)
 
         elif analyse=="Day_To_Span_Average":
             plot_depth=4
@@ -444,6 +445,7 @@ class Window():
 
         elif value=="Temp_Average":
             self.analy_type.set(0)
+            self.period.set(1)
             tk.Checkbutton(self.tweak_frame, variable=self.auto_step, text="Ranged Auto Min", command=self.toggle_auto_min3).grid(row=row, column=1)
             row+=1
             tk.Label(self.tweak_frame, text="Delta Temp: ").grid(row=row, column=1)
@@ -453,6 +455,10 @@ class Window():
             tk.Label(self.tweak_frame, text="Type:").grid(row=row, column=1)
             tk.Radiobutton(self.tweak_frame, var=self.analy_type, text="Day to day", value=0).grid(row=row, column=2, sticky=tk.W, columnspan=10)
             tk.Radiobutton(self.tweak_frame, var=self.analy_type, text="Per event", value=1).grid(row=row+1, column=2, sticky=tk.W, columnspan=10)
+            tk.Label(self.tweak_frame, text="Period:").grid(row=1, column=7)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="All Year", value=1).grid(row=2, column=7, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="Season", value=2).grid(row=3, column=7, sticky=tk.W)
+            tk.Radiobutton(self.tweak_frame, var=self.period, text="Month", value=3).grid(row=4, column=7, sticky=tk.W)
 
             self.L_info.config(text=TEMP_AVERAGE_INFO+AUTO_RANGE_INFO)
 
@@ -784,8 +790,8 @@ def analyse_from_prompt(argv, output_file):
             text, data=ta.diff_time(temp_datas, delta_t, time_max_event, period, T_min, T_max, with_max, show_info=True)
 
 
-        elif analyse_type=="Temp_Average" and first:
-            plot_depth=3
+        elif analyse_type=="Temp_Average":
+            plot_depth=4
             T_min, T_max= 5, 10
             title+="from: {}°C to: {}°C".format(T_min, T_max)
             if with_max:
@@ -794,7 +800,7 @@ def analyse_from_prompt(argv, output_file):
                 title+=", per event"
             else:
                 title+=", day to day"
-            text, data=ta.temp_average(temp_datas, per_event, T_min, T_max, with_max, show_info=True)
+            text, data=ta.temp_average(temp_datas, per_event, T_min, T_max, with_max, period, show_info=True)
 
         elif analyse_type=="Day_To_Span_Average":
             plot_depth=4

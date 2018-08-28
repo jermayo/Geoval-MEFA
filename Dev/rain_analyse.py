@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 # MEFA: Meterological Event Frequency Analysis Software
-# Ver. 1.8.1
+# Ver. 1.9.6
 # Jérémy Mayoraz pour GéoVal
 # Sion, Août 2018
 
