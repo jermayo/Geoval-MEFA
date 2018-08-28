@@ -258,7 +258,7 @@ def temp_average(datas, analy_type, min, max, max_limit, period, show_info=False
                     case["total"]+=1
 
             elif case["during_event"]:
-                if case["max"]>abs(diff):
+                if case["max"]<abs(diff):
                     case["max"]=abs(diff)
 
                 if abs(diff)<temp:

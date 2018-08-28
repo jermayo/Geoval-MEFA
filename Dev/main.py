@@ -792,7 +792,7 @@ def analyse_from_prompt(argv, output_file):
 
         elif analyse_type=="Temp_Average":
             plot_depth=4
-            T_min, T_max= 5, 10
+            T_min, T_max= 3, 10
             title+="from: {}°C to: {}°C".format(T_min, T_max)
             if with_max:
                 title+=" with max limit"
