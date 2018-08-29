@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 # MEFA: Meterological Event Frequency Analysis Software
-# Ver. 1.8.1
+# Ver. 1.9.6
 # Jérémy Mayoraz pour GéoVal
 # Sion, Août 2018
 
@@ -133,9 +133,7 @@ def rain_event(datas, period, cooldown=10, max_scale=1, cumul_scale=5, intensity
                     if date_beetween(start, period_list[period][0], period_list[period][1]):
                         if year not in events[period]:
                             events[period][year]={"total":0, "duration":{}, "max":{}, "cumul":{}, "intensity":{}}
-
                         break
-
             else:
                 maxi=max(maxi, rain)
                 cumul+=rain

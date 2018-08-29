@@ -128,7 +128,7 @@ def check_event_last(events, max_limit):
 
 #######################################################################################
 ########################## Clean Daily Average ########################################
-def clean_daily_average(temp_datas, show_info=False):
+def clean_daily_average(datas, show_info=False):
     days=daily_average(datas)
     text="Day\t\tTemp\tRain\n"
 
@@ -141,7 +141,7 @@ def clean_daily_average(temp_datas, show_info=False):
             if count/n>=incr:
                 print("  > Analysing data  {:.0f}%".format(incr*100), end="\r")
                 incr+=0.01
-        text+="{}\t{:.3f}\t{:.3f}\n".format(day,days[day]["temp"],days[day]["rain"])
+        text+="{}\t{:.3f}\n".format(day,days[day]["temp"])
     if show_info:
         print("  > Analysing data  {:.0f}%".format(100))
     return text

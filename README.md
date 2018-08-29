@@ -41,7 +41,7 @@ Dossiers:
 
 
 Versions:
-Dev: 1.9.6 , Fixed: 1.9.5, Exe: Linux: 1.9.6 mefa_v19.x, Windows: 1.9.5 mefa_v19.exe
+Dev: 1.9.7 (?), Fixed: 1.9.6, Exe: Linux: 1.9.6 mefa_v19.x, Windows: 1.9.5 mefa_v19.exe
 
 
 
