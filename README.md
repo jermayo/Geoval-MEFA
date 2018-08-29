@@ -24,7 +24,7 @@ Format de donnée: voir programme GUI, sous "Change Load Param"
 --year/--season/--month:  period (un ou plus)
 --show-plot:		      show plot
 --save-plot:		      save plot
--of:			          output file (-of=... pour ne pas utiliser le fichier par défault 'output.txt')
+-of:			          output file (-of=... pour ne pas utiliser le fichier par défaut 'output.txt')
 
 
 Fichier "automate":
@@ -41,7 +41,7 @@ Dossiers:
 
 
 Versions:
-Dev: 1.9.7 (?), Fixed: 1.9.6, Exe: Linux: 1.9.6 mefa_v19.x, Windows: 1.9.5 mefa_v19.exe
+Dev: 1.9.7 (?), Fixed: 1.9.6, Exe: Linux: 1.9.6 mefa_v19.x, Windows: 1.9.6 mefa_v19.exe
 
 
 
