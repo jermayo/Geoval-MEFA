@@ -8,25 +8,7 @@
 import datetime
 from collections import OrderedDict
 from calendar import month_abbr
-
-def date_beetween(date, month_start, month_end):
-    if month_start>month_end:
-        if not(date.month<month_start and date.month>=month_end):
-            return True
-    elif date.month>=month_start and date.month<month_end:
-        return True
-    return False
-
-def make_period_list(period):
-    if period==1:
-        return {"Year":[1,13]} #period list from month# to month# NOT INCLUDED, 13 => december included
-    elif period==2:
-        return {"Winter":[12,3],"Spring":[3,6],"Summer":[6,9],"Autumn":[9,12]}
-    elif period==3:
-        period_list={}
-        for i in range(1,13):
-            period_list[month_abbr[i]]=[i, i+1]
-        return period_list
+from utilities import date_beetween, make_period_list
 
 def check_new_year(year, events, min, max, periods=False):
     if year not in events:

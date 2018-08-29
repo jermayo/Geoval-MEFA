@@ -7,8 +7,7 @@
 
 import datetime
 from collections import OrderedDict
-
-from temp_analyse import date_beetween, make_period_list
+from utilities import date_beetween, make_period_list
 
 
 #######################################################################################
@@ -231,7 +230,7 @@ def rain_event(datas, period, cooldown=10, max_scale=1, cumul_scale=5, intensity
     return text
 
 
-def rain_max(datas, period, Rmin, per_event, increment=1, portion=0.25):
+def rain_max(datas, period, Rmin, per_event, with_max, increment=1, portion=0.25, show_info=True):
     period_list=make_period_list(period)
     events=OrderedDict()
     min_rain=[]
@@ -241,41 +240,55 @@ def rain_max(datas, period, Rmin, per_event, increment=1, portion=0.25):
     for period in period_list:
         events[period]=OrderedDict()
         event_list[period]=[]
+
+    n=len(datas)
+    incr=0
+    count=0
+
     for data in datas:
+        count+=1
+        if show_info:
+            if count/n>=incr:
+                print("  > Analysing data   {:.0f}%".format(incr*100), end="\r")
+                incr+=0.01
         i=Rmin
         year=data["date"].year
 
-        while i:
-            if data["rain"]<Rmin:
-                break
-            elif data["rain"]>=i and data["rain"]<i+increment:
-                during_event=True
-                for period in period_list:
-                    if date_beetween(data["date"], period_list[period][0], period_list[period][1]):
-                        if year not in events[period]:
-                            events[period][year]={}
-                        if i not in min_rain:
-                            min_rain.append(i)
-                        if i not in events[period][year]:
-                            events[period][year][i]={"total":0, "during_event":False}
-                        if not events[period][year][i]["during_event"]:
-                            events[period][year][i]["total"]+=1
-                            events[period][year][i]["during_event"]=True
-                            last_year=year
-                            event_list[period].append({"total":i, "year":year})
+        if not during_event:
+            while i<=data["rain"]:
+                if data["rain"]<Rmin:
+                    break
+                elif data["rain"]>=i and (not with_max or (with_max and data["rain"]<i+increment)):
+                    during_event=True
+                    for period in period_list:
+                        if date_beetween(data["date"], period_list[period][0], period_list[period][1]):
+                            if year not in events[period]:
+                                events[period][year]={}
+                            if i not in min_rain:
+                                min_rain.append(i)
+                            if i not in events[period][year]:
+                                events[period][year][i]={"total":0, "during_event":False}
+                            if not events[period][year][i]["during_event"]:
+                                events[period][year][i]["total"]+=1
+                                events[period][year][i]["during_event"]=True
+                                last_year=year
+                                event_list[period].append({"total":i, "year":year})
+                            break
+                    if with_max:
                         break
-                break
-            i+=increment
+                i+=increment
 
-        if data["rain"]==0 and during_event and per_event:
-            during_event=False
-            for i in events[period][last_year]:
-                events[period][last_year][i]["during_event"]=False
-
-        elif not per_event and during_event:
-            for i in events[period][last_year]:
-                if data["rain"]<i:
+        if during_event:
+            if data["rain"]==0 and per_event:
+                during_event=False
+                for i in events[period][last_year]:
                     events[period][last_year][i]["during_event"]=False
+
+            elif not per_event:
+                during_event=False
+                for i in events[period][last_year]:
+                    if data["rain"]<i:
+                        events[period][last_year][i]["during_event"]=False
 
     text=""
     min_rain=sorted(min_rain)
@@ -293,15 +306,15 @@ def rain_max(datas, period, Rmin, per_event, increment=1, portion=0.25):
     text_list=OrderedDict()
     text+="\n\n{:.2f}% of the biggest event\n".format(portion*100)
     period_max=OrderedDict()
+
+
     for period in event_list:
         text+="\t"+str(period)
         period_max[period]=len(event_list[period])*portion
-        while len(event_list[period])>period_max[period]:
-            mini=min([i["total"] for i in event_list[period]])
-            for i in event_list[period]:
-                if mini==i["total"]:
-                    event_list[period].remove(i)
-                    break
+        event_list[period]=sorted(event_list[period], key=lambda k: k["total"])
+        for i in range(int(len(event_list[period])-period_max[period])):
+            event_list[period].pop(0)
+
         for i in event_list[period]:
             if i["year"] not in text_list:
                 text_list[i["year"]]=OrderedDict()

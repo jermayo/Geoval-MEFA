@@ -5,6 +5,15 @@
 # Jérémy Mayoraz pour GéoVal
 # Sion, Août 2018
 
+DATE_FORMATS=['%Y-%m-%d-%H-%M', '%d/%m/%Y', '%Y-%m-%d']
+COL_NAMES=[["STA", "JAHR", "MO", "TG", "HH", "MM"], ["Date", "Rain", "Temp"], ["Day", "Temp", "Rain"]]
+COL_FORMATS=[["Station", "Year", "Month", "Day", "Hour", "Minutes"], ["Date", "Rain", "Temp"], ["Date", "Temp", "Rain"]]
+AUTO_MODES=[True, False, False]
+
+RAIN_KEY="Niederschlag"
+TEMP_KEY="Lufttemperatur"
+
+
 TAKE_OUT_FIRST=2 #Number of years to take out
 TAKE_OUT_LAST=1
 
