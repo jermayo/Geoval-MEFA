@@ -1,14 +1,13 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 # MEFA: Meterological Event Frequency Analysis Software
-# Ver. 1.9.6
+# Ver. 1.9.7
 # Jérémy Mayoraz pour GéoVal
 # Sion, Août 2018
 
 import sys
 import datetime
 
-#my files
 import temp_analyse as ta
 import rain_analyse as ra
 import plot
@@ -23,8 +22,10 @@ def analyse_from_prompt(argv, output_file, data_format):
     print("  > Opening file ...", end="\r")
     #get arguments
     analyse_type=argv[2]
-    per_event, with_max, save_plot, show_plot= False, False, False, False
+    daily_average, per_event, with_max, save_plot, show_plot= False, False, False, False, False
     period_list=[]
+    if "-da" in argv:
+        daily_average=True
     if "-pe" in argv:
         per_event=True
     if "-wm" in argv:
@@ -60,7 +61,7 @@ def analyse_from_prompt(argv, output_file, data_format):
         print("  > Analysing data ...", end="\r")
         if analyse_type=="Data_Cleaning" and first:
             #daily average
-            if "-da" in argv:
+            if daily_average:
                 text=ta.clean_daily_average(temp_datas, rain_datas, show_info=True)
             #just clean data
             else:
@@ -123,7 +124,7 @@ def analyse_from_prompt(argv, output_file, data_format):
             #variable init
             plot_depth=3
             min_rain=6
-            min_time_beetween_event=15
+            min_time_beetween_event=1441
             T_min, T_max = 6, 24
             text, data=ra.rain_cumul(rain_datas, T_min, T_max, min_time_beetween_event, min_rain, period, per_event, show_info=True)
 
@@ -136,6 +137,20 @@ def analyse_from_prompt(argv, output_file, data_format):
         elif analyse_type=="Rain_Max":
             plot_depth=0
             text=ra.rain_max(rain_datas, period, 1, per_event, with_max, increment=0.5)
+
+        #not accessible per GUI
+        elif analyse_type=="Rain_Days_Over_Lim":
+            plot_depth=0
+            limits=[10, 20, 30, 40, 50]
+            text=ra.rain_days_over_lim(rain_datas, limits, period)
+
+        # --------> ADD HERE CALL OF NEW ANALYSE FUNCTION: put plot_depth=0 to not have probleme with the plot
+        # plot: variable "data" must be dictionnaries of type:
+        #        plot depth=3: Year > Limit > {.., type: value, ...} (e.g. {pos:5, neg:3, tot:8})
+        #        plot_depth=4: Year > Limit > Period > {}..., type: value, ...}
+        # text: "text" will be printed out in the output file
+        # Parameters: You can use paramteres: per_event, with_max and daily_average as you wish
+        #             analyse_type is for the name of your analyse, period_list is 1 (all year), 2 (season), 3 (monthly)
 
         res_text=title+"\n"+text
         #output file

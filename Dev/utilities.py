@@ -1,11 +1,13 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 # MEFA: Meterological Event Frequency Analysis Software
-# Ver. 1.9.6
+# Ver. 1.9.7
 # Jérémy Mayoraz pour GéoVal
 # Sion, Août 2018
 
 import datetime
+from calendar import month_abbr
+
 from constant import *
 
 #######################################################################################
@@ -57,6 +59,7 @@ def read_file(file_name, data_format, file_enc="UTF-8", show_info=False):
     bad_temp_data, bad_rain_data= 0, 0
     column=[]
     complete_date=False
+    temp_col, rain_col=False, False
 
     #usual format (from cmd)
     if type(data_format)==int:
@@ -74,6 +77,9 @@ def read_file(file_name, data_format, file_enc="UTF-8", show_info=False):
         temp_key=data_format["temp_key"]
         rain_key=data_format["rain_key"]
         date_format=data_format["date"]
+
+    if len(col_name)!=len(col_format):
+        return False, False, False, "Wrong data format: column name and column format not same length"
 
 
     #easter egg
@@ -94,7 +100,7 @@ def read_file(file_name, data_format, file_enc="UTF-8", show_info=False):
         file=open(file_name, 'r', encoding=file_enc)
         file_lines=file.readlines()
         file.close()
-    except FileNotFoundError:
+    except(FileNotFoundError, IsADirectoryError):
         return False, False, False, "File not found (Err. 404)"
 
     if show_info:
@@ -121,6 +127,8 @@ def read_file(file_name, data_format, file_enc="UTF-8", show_info=False):
 
         #Get starting point
         elif get_start(line, column):
+            if auto_mode and not rain_col and not temp_col:
+                return False, False, False, "No temperature or rain data detected"
             for i in line:
                 if i==rain_col:
                     column.append({"pos":i, "name":rain_col, "val":"Rain"})
@@ -164,12 +172,14 @@ def write_file(file_name, res, log):
         file.write(res)
         file.close()
         return True
-    except FileNotFoundError:
+    except (FileNotFoundError, IsADirectoryError):
         return False
 
 #######################################################################################
 ################# ANALYSES UTILITIES ##################################################
 
+#returns if a date is beetween two months or not
+#month_start and month end of type int, month_end NOT included, 13 means decembre included
 def date_beetween(date, month_start, month_end):
     if month_start>month_end:
         if not(date.month<month_start and date.month>=month_end):
@@ -178,6 +188,7 @@ def date_beetween(date, month_start, month_end):
         return True
     return False
 
+# makes a lits of the period: 1=all year, 2=seasonal, 3=monthly
 def make_period_list(period):
     if period==1:
         return {"Year":[1,13]} #period list from month# to month# NOT INCLUDED, 13 => december included

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 # MEFA: Meterological Event Frequency Analysis Software
-# Ver. 1.9.6
+# Ver. 1.9.7
 # Jérémy Mayoraz pour GéoVal
 # Sion, Août 2018
 
@@ -9,13 +9,13 @@ import tkinter as tk
 from tkinter import messagebox
 import datetime
 
-#own files
 import plot
 from constant import *
 import temp_analyse as ta
 import rain_analyse as ra
 import utilities
 
+#main window class
 class Window():
     def __init__(self, file_name, data_format=0):
         #Main window
@@ -153,7 +153,7 @@ class Window():
             max_limit=False
         if min>max:
             messagebox.showerror("Error", "Minimal value greater than maximal.\n(You fool)")
-            return False
+            return False, False, False, False
         return True, min, max, max_limit
 
     #main analyses function
@@ -167,6 +167,7 @@ class Window():
 
         plot_depth=False
         title=analyse+": "
+        text="Error"
         if analyse=="Data_Cleaning":
             if self.daily_av.get():
                 text=ta.clean_daily_average(self.temp_datas)
@@ -239,7 +240,12 @@ class Window():
             if go:
                 text, data=ra.rain_cumul(self.rain_datas, T_min, T_max, min_time_beetween_event, min_rain, period, per_event)
 
-        # ------> ADD HERE NEW ANALYSE TYPE: init varaibles and call analyse function <------#
+        # --------> ADD HERE CALL OF NEW ANALYSE FUNCTION: put plot_depth=0 to not have probleme with the plot
+        # plot: variable "data" must be dictionnaries of type:
+        #        plot depth=3: Year > Limit > {.., type: value, ...} (e.g. {pos:5, neg:3, tot:8})
+        #        plot_depth=4: Year > Limit > Period > {}..., type: value, ...}
+        # text: "text" will be printed out in the output file
+        # Use find_min_max if you have an auto range in self.w_list
 
         #output file
         res_text=title+"\n"+text
@@ -259,7 +265,7 @@ class Window():
         self.load_end()
 
         #plotting
-        if self.plot_toggle.get() and plot_depth:
+        if self.plot_toggle.get() and plot_depth and text!="Error":
             warning=False
             for i in range(TAKE_OUT_FIRST):
                 data.pop(min([i for i in data]))
@@ -402,7 +408,7 @@ class Window():
 
             self.L_info.config(text=RAIN_CUMUL_INFO)
 
-        # ------> ADD HERE NEW ANALYSE TYPE: add checkbutton, Radiobutton, ... here, MUST be in self.tweak_frame <------#
+        # ------> ADD HERE NEW ANALYSE TYPE: add checkbutton, Radiobutton, ... here. Everything MUST be in self.tweak_frame <------#
 
     #loading widget init
     def load_begin(self):
@@ -482,6 +488,7 @@ class Window():
         for widget in self.w_list:
             widget.destroy()
         self.w_list=[]
+        #auto max enabled
         if self.auto_step.get():
             self.w_list.append(tk.Checkbutton(self.tweak_frame, text="With Max", variable=self.max_limit))
             self.w_list[-1].grid(row=row-1, column=3, columnspan=4)
@@ -498,6 +505,7 @@ class Window():
             self.w_list[-1].insert(0,8)
             self.w_list[-1].grid(row=row,column=2)
 
+    #------------> ADD HERE NEW TOGGLE AUTO MIN: put your widgets in self.w_list and use find_min_max() after to get the value
     #create two spinbox for range value
     def create_range(self, row, first_column, default_min, default_max):
         self.w_list.append(tk.Label(self.tweak_frame, text="From:"))
@@ -558,7 +566,7 @@ class Window():
         else:
             for widget in self.auto_mode_l:
                 widget.destroy()
-                
+
     #end the change of loading parameters
     def end_change_load(self):
         #make list out of the wierd stuff that tk gives me (WTF)

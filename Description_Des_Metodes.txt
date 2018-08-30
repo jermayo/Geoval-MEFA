@@ -1,0 +1,39 @@
+Description des méthodes utilisées dans le proramme MEFA
+
+Température :
+Différence sur le temps: Un événement commence quand la différence entre la valeur de température et la valeur 24h (ou 48h)
+                         est supérieure à ΔT, qui peut varier. Tous les événements qui viennent 24h après un autre événement ne sont pas comptés.
+
+Moyenne typique: On définit la température moyenne typique d’un jour de l’année comme la moyenne des moyennes journalières de chaque année à la même date.
+                 Un événement à lieu si la différence entre la moyenne journalière et la moyenne typique de ce jour est supérieur à ΔT.
+
+Moyenne sur la période: La valeur comparative est calculée en prenant la moyenne des moyennes journalières d’une période dont le jour en question en est le milieu.
+                        Un événement à lieu si la différence entre la valeur journalière et cette valeur est supérieur à ΔT.
+
+
+Pluie :
+Cumul de pluie: Un événement commence quand le cumul de pluie d’une dernière période dépasse une constante
+                et fini s’arrête lorsque cette constante n’a pas été dépassée pendant plus qu’une période définie.
+
+Événement de pluie: Un événement commence dès le moment ou l’on mesure de la pluie (cumul sur 10 minutes dans ce cas)
+                    et fini lorsque la mesure reste nul pour une certaine durée définie. Pour chaque événement on mesure l’intensité maximale,
+                    la durée et le cumul et on en déduit l’intensité moyenne.
+
+                    Deuxième résultats: On prend les plus grande valeur (un pourcentage, pour chque paramètres mesuré)
+                    et on calcule le pourcentage que chaque année a sur ces événements
+
+Pluie Maximale: Un événement à lieu quand la mesure de pluie dépasse une certaine valeur et s’arrête lorsque elle repasse en dessous.
+                Avec l’option "per event", celui-ci s’arrête lorsque la valeur de pluie retombe à zéro
+
+                Deuxième résultats: On prend les plus grande valeur (un pourcentage, pour chque paramètres mesuré)
+                et on calcule le pourcentage que chaque année a sur ces événements
+
+Pluie journalière: Calcule du nombre de jours par année qu'une certaine valeur est dépassée.
+
+
+Paramètres:
+Per event: soit chaque événement est compté individuellement (day to day),
+           soit un événement comparant plusieurs jours, et s’arrête si ΔT n’a jamais été dépassé pendant un certain temps (per event).
+
+With Max:  les événements attribués à un certain ΔT ou paramètre de pluie sont seulement ceux dont la température maximale est inférieure au ΔT supérieur
+           (généralement ΔT+1). De cette manière, les gros événements ne sont pas comptés dans les petits.

@@ -10,6 +10,7 @@ STATION=$1
 if [ $STATION = "-h" ]
 then
     echo "./automate STATION [DATA FOLDER] [EXE FOLDER] [ANALYSE TYPE] [FILE FORMAT] [DEFAULT FORMAT]"
+    echo "Analyse type: Data_Cleaning, Difference_Time, Temp_Average, Day_To_Span_Average, Rain_Cumul or All"
     exit
 fi
 if [ $2 ]
@@ -33,9 +34,25 @@ then
     fi
 fi
 
-echo "Data File: "$DATA_FOLDER/$STATION$FILE_FORMAT
-echo "Exe File: "$EXE_FOLDER/mefa_v??.x
-echo "Analyse Type: "$ANALYSE_TYPE
+
+if [ $ANALYSE_TYPE == "All" ]
+then
+    echo "###################################"
+    echo Difference_Time
+    $0 $1 $2 $3 Difference_Time $5 $6
+    echo "###################################"
+    echo Temp_Average
+    $0 $1 $2 $3 Temp_Average $5 $6
+    echo "###################################"
+    echo Day_To_Span_Average
+    $0 $1 $2 $3 Day_To_Span_Average $5 $6
+    echo "###################################"
+    echo Rain_Cumul
+    $0 $1 $2 $3 Rain_Cumul $5 $6
+    echo "Done !"
+    exit
+fi
+
 echo "Creating temporary folder"
 TEMP_FOLDER="."$STATION"_"$ANALYSE_TYPE"_TEMP"
 mkdir $TEMP_FOLDER
@@ -46,7 +63,8 @@ echo "########################"
 
 ARGU1=pe
 ARGU2=wm
-$EXE_FOLDER/mefa_v??.x $DATA_FOLDER/$STATION$FILE_FORMAT $ANALYSE_TYPE $DEFAULT_FORMAT -$ARGU1 -$ARGU2 --save-plot --season --year
+$EXE_FOLDER/mefa_v??.x $DATA_FOLDER/$STATION$FILE_FORMAT $ANALYSE_TYPE $DEFAULT_FORMAT --save-plot --season --year -$ARGU1 -$ARGU2
+#python3.6 /home/jeremy/Documents/Geoval/Programme_Dev/Dev/main.py $DATA_FOLDER/$STATION$FILE_FORMAT $ANALYSE_TYPE $DEFAULT_FORMAT --save-plot --season --year #-$ARGU1 #-$ARGU2
 #[-h, -pe, -wm, -da, --season/--month, --show-plot, --save-plot, -of]
 
 echo "########################"
